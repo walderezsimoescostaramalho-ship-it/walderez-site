@@ -1,17 +1,25 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Início – Walderez Ramalho</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Início – Walderez Ramalho</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+  <a class="skip-link" href="#main">Pular para o conteúdo</a>
 
-<header class="site-header">
-    <div class="logo">Walderez Ramalho</div>
-    <nav>
+  <header class="site-header" role="banner">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="logo">Walderez Ramalho</div>
+        <div class="subtitle">Prof. Walderez Ramalho (UDESC)</div>
+      </div>
+
+      <!-- Botão Menu removido conforme solicitado -->
+      <nav id="main-nav" class="nav" role="navigation">
         <a href="index.html">Início</a>
         <a href="ferramentas.html">Ferramentas</a>
         <a href="sobre.html">Sobre</a>
@@ -20,63 +28,68 @@
         <a href="projetos.html">Projetos</a>
         <a href="arquivos.html">Arquivos</a>
         <a href="downloads.html">Downloads</a>
-    </nav>
-</header>
-<main class="container">
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="container">
 
     <h1 class="section-title">Bem-vindo</h1>
-    <p>Este é o portal acadêmico de Walderez Ramalho. Explore ferramentas, materiais de ensino, publicações e projetos.</p>
+    <p>Este é o portal acadêmico de Walderez Ramalho. Aqui você encontra ferramentas, materiais de ensino, publicações e informações sobre projetos e cursos.</p>
 
-<section class="welcome">
-  <h2>Bem-vindo</h2>
-  <p>Este é o portal acadêmico de Walderez Ramalho. Aqui você encontra ferramentas, materiais de ensino, publicações e informações sobre projetos e cursos.</p>
+    <section class="welcome">
+      <h2>Bem-vindo</h2>
+      <p>Este é o portal acadêmico de Walderez Ramalho. Aqui você encontra ferramentas, materiais de ensino, publicações e informações sobre projetos e cursos.</p>
 
-  <div class="cards-grid">
-    <!-- 1ª linha -->
-    <article class="card">
-      <h3>Cursos</h3>
-      <p>Informações sobre disciplinas ministradas, cronogramas e planos de ensino.</p>
-      <a href="/cursos" class="card-link">Ver cursos</a>
-    </article>
+      <div class="cards-grid">
 
-    <article class="card">
-      <h3>Projetos</h3>
-      <p>Projetos de pesquisa, colaborações e iniciativas acadêmicas.</p>
-      <a href="/projetos" class="card-link">Ver projetos</a>
-    </article>
+        <!-- 1ª linha -->
+        <article class="card">
+          <h3>Cursos</h3>
+          <p>Informações sobre disciplinas ministradas, cronogramas e planos de ensino.</p>
+          <a href="cursos.html" class="card-link">Ver cursos</a>
+        </article>
 
-    <article class="card">
-      <h3>Publicações</h3>
-      <p>Artigos, capítulos e trabalhos científicos.</p>
-      <a href="/publicacoes" class="card-link">Ver publicações</a>
-    </article>
+        <article class="card">
+          <h3>Projetos</h3>
+          <p>Projetos de pesquisa, colaborações e iniciativas acadêmicas.</p>
+          <a href="projetos.html" class="card-link">Ver projetos</a>
+        </article>
 
-    <!-- 2ª linha -->
-    <article class="card">
-      <h3>Ferramentas</h3>
-      <p>Ferramentas digitais recomendadas para ensino, pesquisa e organização acadêmica.</p>
-      <a href="/ferramentas" class="card-link">Ir para ferramentas</a>
-    </article>
+        <article class="card">
+          <h3>Publicações</h3>
+          <p>Artigos, capítulos e trabalhos científicos.</p>
+          <a href="publicacoes.html" class="card-link">Ver publicações</a>
+        </article>
 
-    <article class="card">
-      <h3>Arquivos</h3>
-      <p>Documentos, slides e materiais de apoio em arquivo.</p>
-      <a href="/arquivos" class="card-link">Ir para arquivos</a>
-    </article>
+        <!-- 2ª linha -->
+        <article class="card">
+          <h3>Ferramentas</h3>
+          <p>Ferramentas digitais recomendadas para ensino, pesquisa e organização acadêmica.</p>
+          <a href="ferramentas.html" class="card-link">Ir para ferramentas</a>
+        </article>
 
-    <article class="card">
-      <h3>Downloads</h3>
-      <p>Instaladores, materiais de apoio e arquivos para download.</p>
-      <a href="/downloads" class="card-link">Ir para downloads</a>
-    </article>
-  </div>
-</section>
+        <article class="card">
+          <h3>Arquivos</h3>
+          <p>Documentos, slides e materiais de apoio em arquivo.</p>
+          <a href="arquivos.html" class="card-link">Ir para arquivos</a>
+        </article>
 
+        <article class="card">
+          <h3>Downloads</h3>
+          <p>Instaladores, materiais de apoio e arquivos para download.</p>
+          <a href="downloads.html" class="card-link">Ir para downloads</a>
+        </article>
 
-</main>
-<footer class="site-footer">
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
     © 2026 – Walderez Ramalho
-</footer>
+  </footer>
 
 </body>
+
 </html>
