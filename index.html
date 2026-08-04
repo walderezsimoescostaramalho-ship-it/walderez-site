@@ -1,64 +1,72 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Início – Walderez Ramalho</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Início – Walderez Ramalho</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+  <a class="skip-link" href="#main">Pular para o conteúdo</a>
+  <header class="site-header" role="banner">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="logo">Walderez Ramalho</div>
+        <div class="subtitle">Prof. Walderez Ramalho (UDESC)</div>
+      </div>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="main-nav"
+        onclick="document.body.classList.toggle('nav-open'); this.setAttribute('aria-expanded', this.getAttribute('aria-expand') || 'true');">Menu</button>
+      <nav id="main-nav" class="nav" role="navigation">
+        <a href="index.html" target="_blank" rel="noopener noreferrer">Início</a>
+        <a href="ferramentas.html" target="_blank" rel="noopener noreferrer">Ferramentas</a>
+        <a href="sobre.html" target="_blank" rel="noopener noreferrer">Sobre</a>
+        <a href="publicacoes.html" target="_blank" rel="noopener noreferrer">Publicações</a>
+        <a href="cursos.html" target="_blank" rel="noopener noreferrer">Cursos</a>
+        <a href="projetos.html" target="_blank" rel="noopener noreferrer">Projetos</a>
+        <a href="arquivos.html" target="_blank" rel="noopener noreferrer">Arquivos</a>
+        <a href="downloads.html" target="_blank" rel="noopener noreferrer">Downloads</a>
+      </nav>
+    </div>
+  </header>
 
-<header class="site-header">
-    <div class="logo">Walderez Ramalho</div>
-    <nav>
-        <a href="index.html">Início</a>
-        <a href="ferramentas.html">Ferramentas</a>
-        <a href="sobre.html">Sobre</a>
-        <a href="publicacoes.html">Publicações</a>
-        <a href="cursos.html">Cursos</a>
-        <a href="projetos.html">Projetos</a>
-        <a href="arquivos.html">Arquivos</a>
-        <a href="downloads.html">Downloads</a>
-    </nav>
-</header>
-<main class="container">
+  <main id="main" class="container">
 
     <h1 class="section-title">Bem-vindo</h1>
-    <p>Este é o portal acadêmico de Walderez Ramalho. Explore ferramentas, materiais de ensino, publicações e projetos.</p>
+    <p>Este é o portal acadêmico de Walderez Ramalho. Aqui você encontra ferramentas, materiais de ensino, publicações e informações sobre projetos e cursos.</p>
 
     <div class="card-grid">
 
-        <div class="card">
-            <h2>Cursos</h2>
-            <p>Informações sobre disciplinas ministradas e planos de ensino.</p>
-            <a href="cursos.html">Ver cursos</a>
-        </div>
+      <div class="card">
+        <h2>Cursos</h2>
+        <p>Informações sobre disciplinas ministradas, cronogramas e planos de ensino.</p>
+        <a href="cursos.html" target="_blank" rel="noopener noreferrer">Ver cursos</a>
+      </div>
 
-        <div class="card">
-            <h2>Projetos</h2>
-            <p>Projetos de pesquisa, colaborações e iniciativas acadêmicas.</p>
-            <a href="projetos.html">Ver projetos</a>
-        </div>
+      <div class="card">
+        <h2>Projetos</h2>
+        <p>Projetos de pesquisa, colaborações e iniciativas acadêmicas.</p>
+        <a href="projetos.html" target="_blank" rel="noopener noreferrer">Ver projetos</a>
+      </div>
 
-        <div class="card">
-            <h2>Downloads</h2>
-            <p>Instaladores e materiais para download.</p>
-            <a href="downloads.html">Ir para downloads</a>
-        </div>
+      <div class="card">
+        <h2>Downloads</h2>
+        <p>Instaladores, materiais de apoio e arquivos para download.</p>
+        <a href="downloads.html" target="_blank" rel="noopener noreferrer">Ir para downloads</a>
+      </div>
 
-        <div class="card">
-            <h2>Ferramentas</h2>
-            <p>Ferramentas digitais para ensino, pesquisa e organização acadêmica.</p>
-            <a href="ferramentas.html">Abrir ferramentas</a>
-        </div>
+      <div class="card">
+        <h2>Ferramentas</h2>
+        <p>Ferramentas digitais recomendadas para ensino, pesquisa e organização acadêmica.</p>
+        <a href="ferramentas.html" target="_blank" rel="noopener noreferrer">Abrir ferramentas</a>
+      </div>
 
     </div>
 
-</main>
-<footer class="site-footer">
-    © 2026 – Walderez Ramalho
-</footer>
+  </main>
 
+  <footer class="site-footer" role="contentinfo">© 2026 – Walderez Ramalho</footer>
 </body>
+
 </html>
