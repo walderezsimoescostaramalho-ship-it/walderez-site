@@ -1,108 +1,116 @@
-/* ======== TEMA TERROSO MINIMALISTA ======== */
+/* ======== TEMA TERROSO ACADÊMICO ======== */
 
 body {
     margin: 0;
-    font-family: "Inter", sans-serif;
-    background: #f9f6f1; /* papel terroso */
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    background: #f9f6f1;
     color: #2e2e2e;
 }
 
-/* ======== CABEÇALHO FIXO ======== */
+/* CABEÇALHO FIXO */
 
 header {
-    background: #5a4632; /* marrom escuro elegante */
+    background: #5a4632;
     color: #f9f6f1;
-    padding: 20px 40px;
+    padding: 18px 40px;
     position: fixed;
     top: 0;
     width: 100%;
     z-index: 1000;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
 }
 
 header h1 {
     margin: 0;
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 600;
 }
 
 nav {
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 nav a {
     color: #f9f6f1;
-    margin-right: 20px;
+    margin-right: 18px;
     text-decoration: none;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
 }
 
 nav a:hover {
-    color: #a67c52; /* marrom claro */
+    color: #d9b58a;
 }
 
-/* ======== CONTEÚDO ======== */
+/* CONTEÚDO */
 
 .container {
-    max-width: 900px;
-    margin: auto;
-    padding: 120px 40px 40px; /* espaço por causa do menu fixo */
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 110px 24px 40px;
 }
 
 .card {
     background: #ffffff;
-    padding: 30px;
-    margin-top: 30px;
+    padding: 26px;
+    margin-top: 24px;
     border-radius: 12px;
-    border: 1px solid #e5e5e5;
+    border: 1px solid #e3ded5;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
 }
 
-/* ======== SEÇÕES ======== */
+/* SEÇÕES */
 
 .section-title {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     color: #5a4632;
 }
 
 .block {
-    margin-bottom: 40px;
+    margin-bottom: 26px;
 }
 
-.block ul {
+/* LISTAS */
+
+ul.material-list {
     list-style: none;
     padding-left: 0;
+    margin: 0;
 }
 
-.block li {
-    margin: 8px 0;
+ul.material-list li {
+    padding: 6px 0;
+    border-bottom: 1px solid #eee3d4;
+    font-size: 15px;
 }
 
-.block a {
+ul.material-list li:last-child {
+    border-bottom: none;
+}
+
+ul.material-list a {
     text-decoration: none;
     color: #a67c52;
-    font-size: 16px;
 }
 
-.block a:hover {
+ul.material-list a:hover {
     text-decoration: underline;
 }
 
-/* ======== ÍCONES ======== */
-
-.icon {
-    width: 22px;
-    vertical-align: middle;
-    margin-right: 10px;
+.material-meta {
+    color: #8a7b68;
+    font-size: 13px;
+    margin-left: 6px;
 }
 
-/* ======== RODAPÉ ======== */
+/* RODAPÉ */
 
 footer {
     text-align: center;
-    padding: 20px;
+    padding: 18px;
     margin-top: 40px;
-    color: #777;
+    color: #7a6c5a;
+    font-size: 13px;
 }
