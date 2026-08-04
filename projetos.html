@@ -2,15 +2,20 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Projetos – Walderez Ramalho</title>
 <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-<header>
-    <h1>Projetos</h1>
-    <nav>
+<a class="skip-link" href="#main">Pular para o conteúdo</a>
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="logo">Walderez Ramalho</div>
+      <div class="subtitle">Prof. Walderez Ramalho (UDESC)</div>
+    </div>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="main-nav" onclick="document.body.classList.toggle('nav-open'); this.setAttribute('aria-expanded', this.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');">☰</button>
+    <nav id="main-nav" class="nav" role="navigation">
         <a href="index.html">Início</a>
         <a href="ferramentas.html">Ferramentas</a>
         <a href="sobre.html">Sobre</a>
@@ -20,56 +25,42 @@
         <a href="arquivos.html">Arquivos</a>
         <a href="downloads.html">Downloads</a>
     </nav>
+  </div>
 </header>
 
-<div class="container">
+<main id="main" class="container">
+  <div class="card">
+    <h2>Projetos de Pesquisa</h2>
 
-    <div class="card">
-        <h2>Projetos de Pesquisa</h2>
-
-        <div class="block">
-            <div class="section-title">Policronias do presente</div>
-            <p>Projeto de pesquisa dedicado a investigar a presença, variedade e relevância do discurso histórico no tempo presente, bem como as funções políticas, sociais e culturais que esse discurso assume em diferentes contextos</p>
-        </div>
-
-        <div class="block">
-            <div class="section-title">História e Inteligência Artificial</div>
-            <p>Experimentações entre Historia e IA, utilizando técnicas de vibe coding, para desenvolver soluções práticas para meus projetos de pesquisa e ensino</p>
-        </div>
-
-        <div class="block">
-          <div class="section-title">Capivara</div>
-          <p>Software livre para construir bancos de dados históricos individualmente ou em equipe.</p>
-          <ul>
-            <li>
-              <a href="https://drive.google.com/drive/folders/1ZJ7g7oX8mHcZTMSm44vz9qZ68U-0hTZS?usp=sharing"
-                 target="_blank"
-                 rel="noopener noreferrer">
-                Baixar o Capivara (Google Drive)
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <div class="block">
-          <div class="section-title">Historicidata</div>
-          <p>Software livre para visualizar dados históricos organizados em planilhas.</p>
-          <ul>
-            <li>
-              <a href="https://drive.google.com/drive/folders/1nsjP74srppfGm0xUSb1y5zOA1xszx8SW?usp=sharing"
-                 target="_blank"
-                 rel="noopener noreferrer">
-                Baixar o Historicidata (Google Drive)
-              </a>
-            </li>
-          </ul>
-        </div>
-
+    <div class="block">
+      <div class="section-title">Policronias do presente</div>
+      <p>Projeto de pesquisa dedicado a investigar a presença, variedade e relevância do discurso histórico no tempo presente, bem como as funções políticas, sociais e culturais que esse discurso observa.</p>
     </div>
 
-</div>
+    <div class="block">
+      <div class="section-title">História e Inteligência Artificial</div>
+      <p>Experimentações entre História e IA, utilizando técnicas aplicadas para desenvolver soluções práticas para pesquisa e ensino.</p>
+    </div>
 
-<footer>© 2026 – Walderez Ramalho</footer>
+    <div class="block">
+      <div class="section-title">Capivara</div>
+      <p>Software livre para construir bancos de dados históricos individualmente ou em equipe.</p>
+      <ul class="section-list">
+        <li><span>Download</span><a href="https://drive.google.com/drive/folders/1ZJ7g7oX8mHcZTMSm44vz9qZ68U-0hTZS?usp=sharing" target="_blank" rel="noopener noreferrer">Baixar o Capivara (Google Drive)</a></li>
+      </ul>
+    </div>
 
+    <div class="block">
+      <div class="section-title">Historicidata</div>
+      <p>Software livre para visualizar dados históricos organizados em planilhas.</p>
+      <ul class="section-list">
+        <li><span>Download</span><a href="https://drive.google.com/drive/folders/1nsjP74srppfGm0xUSb1y5zOA1xszx8SW?usp=sharing" target="_blank" rel="noopener noreferrer">Baixar o Historicidata (Google Drive)</a></li>
+      </ul>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer" role="contentinfo">© 2026 – Walderez Ramalho</footer>
 </body>
 </html>
