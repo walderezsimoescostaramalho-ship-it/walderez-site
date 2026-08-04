@@ -2,15 +2,20 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Início – Walderez Ramalho</title>
 <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-<header>
-    <h1>Walderez Ramalho</h1>
-    <nav>
+<a class="skip-link" href="#main">Pular para o conteúdo</a>
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="logo">Walderez Ramalho</div>
+      <div class="subtitle">Prof. Walderez Ramalho (UDESC)</div>
+    </div>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="main-nav" onclick="document.body.classList.toggle('nav-open'); this.setAttribute('aria-expanded', this.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');">☰</button>
+    <nav id="main-nav" class="nav" role="navigation">
         <a href="index.html">Início</a>
         <a href="ferramentas.html">Ferramentas</a>
         <a href="sobre.html">Sobre</a>
@@ -20,17 +25,46 @@
         <a href="arquivos.html">Arquivos</a>
         <a href="downloads.html">Downloads</a>
     </nav>
+  </div>
 </header>
 
-<div class="container">
-    <div class="card">
-        <h2>Bem-vindo</h2>
-        <p>Este é o portal acadêmico de Walderez Ramalho.</p>
-        <p>Explore ferramentas, materiais de ensino, publicações e projetos.</p>
-    </div>
-</div>
+<main id="main" class="container">
+  <section class="hero">
+    <h1>Bem-vindo</h1>
+    <p>Portal acadêmico do Prof. Walderez Ramalho. Explore ferramentas, materiais de ensino, publicações e projetos.</p>
+  </section>
 
-<footer>© 2026 – Walderez Ramalho</footer>
+  <div class="grid">
+    <article class="card">
+      <h2>Ferramentas</h2>
+      <p>Acesso a utilitários e programas desenvolvidos para ensino e pesquisa.</p>
+      <ul class="section-list">
+        <li><span>Programas</span><a href="ferramentas.html">Abrir</a></li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>Publicações</h2>
+      <p>Artigos, capítulos e livros.</p>
+      <ul class="section-list">
+        <li><span>Lista de publicações</span><a href="publicacoes.html">Ver</a></li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h2>Arquivos</h2>
+      <p>Materiais de aula, slides, textos e exercícios organizados por pasta.</p>
+      <ul class="section-list">
+        <li><span>Materiais</span><a href="arquivos.html">Abrir</a></li>
+      </ul>
+    </article>
+  </div>
+
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  © 2026 – Walderez Ramalho
+</footer>
 
 </body>
 </html>
