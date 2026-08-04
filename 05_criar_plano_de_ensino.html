@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construtor de Planos de Ensino</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b2a4a;
+    --ink-soft:#445070;
+    --paper:#faf8f4;
+    --paper-alt:#f1ede4;
+    --line:#dcd5c6;
+    /* Cores UDESC - verde e azul */
+    --accent:#2d7d4f;
+    --accent-strong:#1d5239;
+    --udesc-blue:#0d4a8f;
+    --udesc-light:#e8f0f7;
+    --good:#3f6e52; --good-bg:#e8f0ea; --good-line:#bcd4c3;
+    --warn:#a8492b; --warn-bg:#f7e9e3; --warn-line:#e3bfae;
+    --cond-bg:#fbf1d9; --cond-line:#e6cf94;
+    --white:#ffffff;
+    --radius:10px;
+    --font-display:'Source Serif 4', Georgia, serif;
+    --font-body:'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono:'IBM Plex Mono', ui-monospace, monospace;
+    --doc-accent:#0d4a8f;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body); font-size:14px; line-height:1.5;}
+
+  header.appbar{
+    background:linear-gradient(135deg, var(--udesc-blue) 0%, var(--accent) 100%);
+    color:var(--paper); padding:16px 24px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    border-bottom:4px solid var(--accent); position:sticky; top:0; z-index:40;
+    box-shadow:0 2px 8px rgba(13,74,143,.2);
+  }
+  header.appbar h1{font-family:var(--font-display); font-weight:600; font-size:20px; margin:0;}
+  header.appbar .sub{font-size:11.5px; opacity:.72; font-family:var(--font-mono);}
+  .appbar-controls{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  select, input[type=text], input[type=number], input[type=email], input[type=url], textarea, input[type=color]{
+    font-family:var(--font-body); font-size:13px; padding:6px 9px; border:1px solid var(--line);
+    border-radius:7px; background:var(--white); color:var(--ink);
+  }
+  .appbar-controls select{background:#26375f; color:var(--paper); border-color:#3a4d78;}
+  button{
+    font-family:var(--font-body); font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:7px;
+    border:1px solid var(--line); background:var(--white); color:var(--ink); cursor:pointer;
+  }
+  button:hover{box-shadow:0 2px 6px rgba(0,0,0,.08);}
+  button.primary{background:var(--accent); border-color:var(--accent-strong); color:#fff;}
+  button.primary:hover{background:var(--accent-strong);}
+  button.ghost{background:transparent; border-color:rgba(255,255,255,.35); color:var(--paper);}
+  button.danger{color:var(--warn); border-color:var(--warn); background:transparent;}
+  button.small{padding:4px 9px; font-size:11.5px;}
+
+  .layout{display:grid; grid-template-columns:minmax(360px,480px) 1fr; gap:0; align-items:start;}
+  @media (max-width:980px){ .layout{grid-template-columns:1fr;} #previewCol{order:-1;} }
+
+  #editorCol{padding:20px; max-height:calc(100vh - 64px); overflow-y:auto;}
+  #previewCol{padding:28px; max-height:calc(100vh - 64px); overflow-y:auto; background:#efe9dc;}
+
+  .panel{background:var(--white); border:1px solid var(--line); border-radius:var(--radius); margin-bottom:16px; overflow:hidden;}
+  .panel > .panel-head{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; cursor:pointer; background:var(--paper-alt); border-bottom:2px solid var(--udesc-light); border-left:4px solid var(--accent);}
+  .panel > .panel-head h2{font-family:var(--font-display); font-size:15.5px; margin:0; font-weight:600; color:var(--udesc-blue);}
+  .panel > .panel-head .chevron{transition:transform .2s ease; color:var(--ink-soft); font-size:12px;}
+  .panel.collapsed > .panel-body{display:none;}
+  .panel.collapsed .chevron{transform:rotate(-90deg);}
+  .panel > .panel-body{padding:16px;}
+
+  .field{display:flex; flex-direction:column; gap:4px; margin-bottom:10px;}
+  .field label{font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); font-weight:600;}
+  .field input, .field textarea, .field select{width:100%;}
+  textarea{resize:vertical; min-height:64px; font-family:var(--font-body);}
+  textarea.mono{font-family:var(--font-mono); font-size:12px;}
+  .row2{display:flex; gap:10px;}
+  .row2 > .field{flex:1;}
+  .hint{font-size:11px; color:var(--ink-soft); margin-top:-4px; margin-bottom:8px;}
+
+  .card{border:1px solid var(--line); border-radius:9px; padding:12px; margin-bottom:10px; background:var(--paper);}
+  .card-top{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .card-top .tag{font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);}
+  .nested{margin-left:12px; padding-left:12px; border-left:2px solid var(--udesc-light); margin-top:8px;}
+  .empty-hint{font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:6px 0;}
+  .add-row{display:flex; gap:8px; margin-top:6px;}
+  .move-btns{display:flex; gap:4px;}
+
+  /* NOVO: Espaço de respiro */
+  .spacer-input{margin:12px 0; padding:16px; background:var(--udesc-light); border-left:4px solid var(--accent); border-radius:4px; font-size:12px; text-align:center; color:var(--ink-soft);}
+
+  /* NOVO: Tabela de cronograma */
+  table.schedule{width:100%; border-collapse:collapse; margin:12px 0; font-size:12px;}
+  table.schedule th{background:var(--udesc-blue); color:#fff; padding:8px; text-align:left; font-weight:600;}
+  table.schedule td{padding:8px; border-bottom:1px solid var(--line); vertical-align:top;}
+  table.schedule tr:hover{background:var(--udesc-light);}
+
+  /* PREVIEW — mimics printed institutional document */
+  .sheet{
+    background:var(--white); max-width:780px; margin:0 auto 40px;
+    box-shadow:0 8px 30px rgba(13,74,143,.15);
+    border-top:8px solid var(--doc-accent);
+    border-left:3px solid var(--accent);
+    padding:44px 52px;
+    font-family:var(--font-body);
+    color:#232a3a;
+  }
+  .sheet .doc-header{display:flex; align-items:center; gap:14px; margin-bottom:22px; border-bottom:2px solid var(--udesc-light); padding-bottom:12px;}
+  .sheet .doc-header img{height:34px;}
+  .sheet .doc-header .inst{font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:var(--accent); text-transform:uppercase; font-weight:600;}
+  .sheet .doc-title{text-align:center; margin-bottom:26px;}
+  .sheet .doc-title h1{font-family:var(--font-display); font-size:26px; margin:0 0 4px; color:var(--doc-accent); font-weight:700;}
+  .sheet .doc-title .subt{font-family:var(--font-display); font-size:16px; font-weight:600; margin-bottom:2px;}
+  .sheet .doc-title .prof{font-size:13px; font-weight:600;}
+  .sheet .doc-title .email{font-size:12px; color:#1155CC;}
+  .sheet h2.sec{font-family:var(--font-display); font-size:16.5px; color:var(--doc-accent); border-bottom:2px solid var(--accent); padding-bottom:6px; margin:26px 0 10px;}
+  .sheet h2.sec:before{content:''; display:inline-block; width:4px; height:1em; background:var(--accent); margin-right:8px;}
+  .sheet h3.sub{font-family:var(--font-display); font-size:14.5px; color:var(--accent); margin:14px 0 6px;}
+  .sheet p{margin:0 0 10px; text-align:justify; font-size:13.3px;}
+  .sheet ul{margin:0 0 10px; padding-left:20px;}
+  .sheet li{margin-bottom:5px; font-size:13.3px;}
+  .sheet .bib{font-size:13.5px; margin-bottom:8px; color:#333; padding-left:12px; border-left:3px solid var(--accent);}
+  .sheet .bib-subtitle{font-weight:600; color:var(--accent); margin-top:12px; margin-bottom:6px; font-size:12.8px;}
+  .sheet .topic-date{font-family:var(--font-display); font-weight:600; color:var(--accent); margin:16px 0 2px; font-size:15px;}
+  .sheet .topic-title{font-style:italic; margin-bottom:6px; font-size:14px;}
+  .sheet .topic-tag{display:inline-block; font-family:var(--font-mono); font-size:12px; font-weight:700; color:#fff; background:var(--accent); padding:2px 8px; border-radius:3px; margin-bottom:6px;}
+  .sheet .topic-carga{display:inline-block; font-family:var(--font-mono); font-size:12px; color:var(--accent); background:var(--udesc-light); padding:2px 8px; border-radius:3px; margin-left:6px; margin-bottom:6px;}
+  .sheet hr.div{border:none; border-top:2px solid var(--udesc-light); margin:14px 0;}
+  .sheet .alert{background:var(--cond-bg); border:1px solid var(--cond-line); border-left:4px solid var(--accent); border-radius:6px; padding:10px 12px; font-size:13.5px; font-style:italic; margin-bottom:10px;}
+  .sheet table.ia{width:100%; border-collapse:collapse; margin:12px 0; font-size:12px;}
+  .sheet table.ia th{background:var(--udesc-blue); color:#fff; padding:7px 8px; text-align:left; font-size:11.5px;}
+  .sheet table.ia td{padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top;}
+  .sheet table.ia td.status{font-weight:700; white-space:nowrap;}
+  .sheet table.ia tr.livre td.status{background:var(--good-bg); color:var(--good);}
+  .sheet table.ia tr.condicional td.status{background:var(--cond-bg); color:#8a6d1a;}
+  .sheet table.ia tr.vedado td.status{background:var(--warn-bg); color:var(--warn);}
+  .sheet .eval-block{margin-bottom:16px;}
+  .sheet .eval-block .label{font-weight:700;}
+  .sheet .links li{font-size:12.8px;}
+  .sheet .page-meta{text-align:right; font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-top:30px; border-top:1px solid var(--line); padding-top:12px;}
+
+  @media print{
+    body *{visibility:hidden;}
+    #previewCol, #previewCol *{visibility:visible;}
+    #previewCol{position:absolute; left:0; top:0; width:100%; max-height:none; overflow:visible; background:#fff; padding:0;}
+    .sheet{box-shadow:none; border-top:none; border-left:none; max-width:100%; margin:0; padding:24px 34px;}
+    header.appbar{display:none;}
+  }
+  @page{ margin:14mm; }
+
+  .footer-note{max-width:1400px; margin:0 auto; padding:10px 24px 30px; font-size:11.5px; color:var(--ink-soft);}
+  .logo-upload{display:flex; align-items:center; gap:8px;}
+  .logo-preview{height:28px; border:1px solid var(--line); border-radius:4px; padding:2px; background:#fff;}
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div>
+    <h1>Construtor de Planos de Ensino</h1>
+    <div class="sub">editor estruturado · pré-visualização em tempo real · pronto para imprimir/PDF</div>
+  </div>
+  <div class="appbar-controls">
+    <select id="selectPlanosNav" style="background:#26375f; color:var(--paper); border-color:#3a4d78; padding:6px 9px;" onchange="switchPlano(this.value)"></select>
+    <button class="ghost" id="btnNovoPlan">+ Novo plano</button>
+    <button class="ghost" id="btnDuplicarPlan">⊘ Duplicar</button>
+    <button class="ghost" id="btnEspacoRespiro">⊘ Espaço de respiro</button>
+    <button class="ghost" id="btnExportJson">↓ JSON</button>
+    <button class="ghost" id="btnImportJson">↑ JSON</button>
+    <button class="ghost" id="btnExportMarkdown">📝 MD</button>
+    <button class="ghost" id="btnExportHtml">📄 HTML</button>
+    <button class="ghost" id="btnExportDocx">↓ DOCX</button>
+    <button class="ghost" id="btnPrint" onclick="window.print()">🖨 PDF</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div id="editorCol"></div>
+  <div id="previewCol">
+    <div id="previewSheet" class="sheet"></div>
+  </div>
+</div>
+
+<div class="footer-note">
+  <strong>Construtor de Planos</strong> — editor com pré-visualização · exporta em PDF e DOCX
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.min.js"></script>
+<script>
+/* ==================== ESTADO E GERENCIAMENTO ==================== */
+let planos = {};
+let ativo_id = null;
+let ultimaAlteracao = null;
+
+function uid(){
+  return Math.random().toString(36).substr(2,9);
+}
+
+function ativo(){
+  return planos[ativo_id];
+}
+
+function saveState(){
+  localStorage.setItem('planos', JSON.stringify(planos));
+  localStorage.setItem('ativo_id', ativo_id);
+  updatePlanosDropdown();
+}
+
+function loadState(){
+  planos = JSON.parse(localStorage.getItem('planos') || '{}');
+  ativo_id = localStorage.getItem('ativo_id') || null;
+  if(!ativo_id && Object.keys(planos).length > 0) {
+    ativo_id = Object.keys(planos)[0];
+  }
+}
+
+function updatePlanosDropdown(){
+  const select = document.getElementById('selectPlanosNav');
+  if(!select) return;
+  const current = select.value;
+  select.innerHTML = '';
+  Object.keys(planos).forEach(id => {
+    const disciplina = planos[id].cabecalho.disciplina || `Plano ${id.substr(0,6)}`;
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = disciplina;
+    select.appendChild(opt);
+  });
+  select.value = ativo_id;
+}
+
+function switchPlano(id){
+  ativo_id = id;
+  saveState();
+  renderEditor();
+  renderPreview();
+}
+
+function duplicarPlano(){
+  const p = ativo();
+  const newId = uid();
+  planos[newId] = JSON.parse(JSON.stringify(p));
+  planos[newId].id = newId;
+  ativo_id = newId;
+  saveState();
+  renderEditor();
+  renderPreview();
+}
+
+function newPlano(){
+  const id = uid();
+  planos[id] = {
+    id,
+    cabecalho: {
+      disciplina: '', professor: '', email: '', instituicao: '', turma: '',
+      horarios: [], logoDataUrl: '', subtitulo: '', cor: '#0d4a8f'
+    },
+    ementa: '',
+    objGeral: [],
+    objEsp: [],
+    metodologia: '',
+    infos: [],
+    ia: { ativa: false, intro: '', linhas: [] },
+    regime: { avaliacoes: [], obs: '' },
+    cronograma: { 
+      modulos: [],
+      useTable: false,
+      showCarga: false,
+      showDatas: true
+    },
+    referencias: { 
+      grupos: [] // [{titulo: '', itens: []}]
+    },
+    links: [],
+  };
+  ativo_id = id;
+  saveState();
+  return id;
+}
+
+/* ==================== INICIALIZAÇÃO ==================== */
+loadState();
+if(!ativo_id || Object.keys(planos).length === 0) {
+  newPlano();
+}
+
+/* ==================== RENDERIZAÇÃO EDITOR ==================== */
+function renderEditor(){
+  const p = ativo();
+  const col = document.getElementById('editorCol');
+  col.innerHTML = '';
+
+  // Cabecalho
+  const panelHead = document.createElement('div');
+  panelHead.className = 'panel';
+  panelHead.innerHTML = `
+    <div class="panel-head"><h2>Identificação da Disciplina</h2><span class="chevron">›</span></div>
+    <div class="panel-body">
+      <div class="row2">
+        <div class="field"><label>Disciplina</label><input type="text" data-f="disciplina" data-p="cabecalho" value="${escapeHtml(p.cabecalho.disciplina)}"></div>
+        <div class="field"><label>Subtítulo</label><input type="text" data-f="subtitulo" data-p="cabecalho" value="${escapeHtml(p.cabecalho.subtitulo)}"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Professor(a)</label><input type="text" data-f="professor" data-p="cabecalho" value="${escapeHtml(p.cabecalho.professor)}"></div>
+        <div class="field"><label>Email</label><input type="email" data-f="email" data-p="cabecalho" value="${escapeHtml(p.cabecalho.email)}"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Instituição</label><input type="text" data-f="instituicao" data-p="cabecalho" value="${escapeHtml(p.cabecalho.instituicao)}"></div>
+        <div class="field"><label>Turma</label><input type="text" data-f="turma" data-p="cabecalho" value="${escapeHtml(p.cabecalho.turma)}"></div>
+      </div>
+      <div class="field"><label>Horários (um por linha)</label><textarea class="mono" id="horarios">${(p.cabecalho.horarios || []).join('\n')}</textarea></div>
+      <div class="row2">
+        <div class="field"><label>Cor do documento</label><input type="color" data-f="cor" data-p="cabecalho" value="${p.cabecalho.cor}"></div>
+        <div class="field"><label>Logo (URL)</label><input type="url" id="logoUrl" placeholder="https://..."></div>
+      </div>
+      <div class="logo-upload">
+        <input type="file" id="logoFile" accept="image/*">
+        <div class="logo-preview" id="logoPreview"></div>
+      </div>
+    </div>
+  `;
+  col.appendChild(panelHead);
+  attachFieldListeners(panelHead);
+  setupLogoUpload();
+  setupHorarios();
+
+  // Ementa
+  const panelEmenta = document.createElement('div');
+  panelEmenta.className = 'panel';
+  panelEmenta.innerHTML = `
+    <div class="panel-head"><h2>Ementa</h2><span class="chevron">›</span></div>
+    <div class="panel-body">
+      <div class="field"><label></label><textarea data-f="ementa">${escapeHtml(p.ementa)}</textarea></div>
+    </div>
+  `;
+  col.appendChild(panelEmenta);
+  attachFieldListeners(panelEmenta);
+
+  // Objetivos
+  const panelObj = document.createElement('div');
+  panelObj.className = 'panel';
+  panelObj.innerHTML = `
+    <div class="panel-head"><h2>Objetivos</h2><span class="chevron">›</span></div>
+    <div class="panel-body">
+      <h3 class="sub">Objetivo geral</h3>
+      <div id="objGeralList"></div>
+      <button class="small" id="btnAddObjGeral">+ Adicionar</button>
+      <h3 class="sub" style="margin-top:16px;">Objetivos específicos</h3>
+      <div id="objEspList"></div>
+      <button class="small" id="btnAddObjEsp">+ Adicionar</button>
+    </div>
+  `;
+  col.appendChild(panelObj);
+  renderObjGeral(panelObj.querySelector('#objGeralList'));
+  renderObjEsp(panelObj.querySelector('#objEspList'));
+  panelObj.querySelector('#btnAddObjGeral').addEventListener('click', ()=>{
+    ativo().objGeral.push(''); saveState(); 
+    renderObjGeral(panelObj.querySelector('#objGeralList')); renderPreview();
+  });
+  panelObj.querySelector('#btnAddObjEsp').addEventListener('click', ()=>{
+    ativo().objEsp.push(''); saveState(); 
+    renderObjEsp(panelObj.querySelector('#objEspList')); renderPreview();
+  });
+
+  // Proposta da disciplina (Metodologia)
+  const panelMet = document.createElement('div');
+  panelMet.className = 'panel';
+  panelMet.innerHTML = `
+    <div class="panel-head"><h2>Proposta da disciplina</h2><span class="chevron">›</span></div>
+    <div class="panel-body">
+      <div class="markdown-toolbar" style="margin-bottom:10px; display:flex; gap:4px; flex-wrap:wrap;">
+        <button class="small" data-bold="true" title="Negrito (Ctrl+B)">🅱 Bold</button>
+        <button class="small" data-italic="true" title="Itálico">ℐ Itálico</button>
+        <button class="small" data-code="true" title="Código">⌨ Código</button>
+        <button class="small" data-ul="true" title="Lista">◆ Lista</button>
+        <button class="small" data-link="true" title="Link">[Link]</button>
+      </div>
+      <div class="field"><label></label><textarea data-f="metodologia" class="markdown-textarea">${escapeHtml(p.metodologia)}</textarea></div>
+    </div>
+  `;
+  col.appendChild(panelMet);
+  attachFieldListeners(panelMet);
+  setupMarkdownToolbar(panelMet);
+
+  // Informações importantes
+  const panelInfo = document.createElement('div');
+  panelInfo.className = 'panel collapsed';
+  panelInfo.innerHTML = `
+    <div class="panel-head"><h2>Informações Importantes</h2><span class="chevron">›</span></div>
+    <div class="panel-body">
+      <div id="infosList"></div>
+      <button class="small" id="btnAddInfo">+ Adicionar</button>
+    </div>
+  `;
+  col.appendChild(panelInfo);
+  renderInfos(panelInfo.querySelector('#infosList'));
+  panelInfo.querySelector('#btnAddInfo').addEventListener('click', ()=>{
+    ativo().infos.push(''); saveState(); renderInfos(panelInfo.querySelector('#infosList')); renderPreview();
+  });
+
+  // Política de IA
+  const panelIA = document.createElement('div');
+  panelIA.className = 'panel collapsed';
+  panelIA.innerHTML = `
+    <div class="panel-head"><h2>Política de IA</h2><span class="chevron">›</span></div>
+    <div class="panel-body">
+      <div class="field">
+        <label><input type="checkbox" id="iaAtiva" ${p.ia.ativa ? 'checked' : ''}> Ativar política de IA</label>
+        <div id="iaContent" style="display:${p.ia.ativa ? 'block' : 'none'}; margin-top:12px;">
+          <div class="field"><label>Introdução/Contexto</label><textarea data-f="intro" data-p="ia">${escapeHtml(p.ia.intro)}</textarea></div>
+          <div id="iaLinhasList"></div>
+          <button class="small" id="btnAddIaLinha">+ Adicionar linha</button>
+        </div>
+      </div>
+    </div>
+  `;
+  col.appendChild(panelIA);
+  const iaCheckbox = panelIA.querySelector('#iaAtiva');
+  iaCheckbox.addEventListener('change', ()=>{
+    ativo().ia.ativa = iaCheckbox.checked;
+    saveState(); renderEditor(); renderPreview();
+  });
+  attachFieldListeners(panelIA);
+  if(p.ia.ativa) {
+    renderIaLinhas(panelIA.querySelector('#iaLinhasList'));
+    panelIA.querySelector('#btnAddIaLinha').addEventListener('click', ()=>{
+      ativo().ia.linhas.push({id:uid(), tarefa:'', status:'Livre', condicoes:''});
+      saveState(); renderIaLinhas(panelIA.querySelector('#iaLinhasList')); renderPreview();
+    });
+  }
+
+  // Regime Avaliativo
+  const panelReg = document.createElement('div');
+  panelReg.className = 'panel';
+  panelReg.innerHTML = `
+    <div class="panel-head"><h2>Regime Avaliativo</h2><span class="chevron">›</span></div>
+    <div class="panel-body">
+      <div class="field"><label>Observações gerais</label><textarea data-f="obs" data-p="regime">${escapeHtml(p.regime.obs)}</textarea></div>
+      <div id="avaliacoesList"></div>
+      <button class="small" id="btnAddAvaliacao">+ Adicionar avaliação</button>
+    </div>
+  `;
+  col.appendChild(panelReg);
+  attachFieldListeners(panelReg);
+  renderAvaliacoes(panelReg.querySelector('#avaliacoesList'));
+  panelReg.querySelector('#btnAddAvaliacao').addEventListener('click', ()=>{
+    ativo().regime.avaliacoes.push({id:uid(), nome:'', metodo:'', recuperacao:'', descricao:'', data:'', valor:'', criterios:''});
+    saveState(); renderAvaliacoes(panelReg.querySelector('#avaliacoesList')); renderPreview();
+  });
+
+  // Cronograma
+  const panelCron = document.createElement('div');
+  panelCron.className = 'panel';
+  panelCron.innerHTML = `
+    <div class="panel-head"><h2>Cronograma</h2><span class="chevron">›</span></div>
+    <div class="panel-body">
+      <div class="field">
+        <label><input type="checkbox" id="useTableView" ${p.cronograma.useTable ? 'checked' : ''}> Usar visualização em tabela</label>
+      </div>
+      <div id="tableOptions" style="display:${p.cronograma.useTable ? 'block' : 'none'}; padding:12px; background:var(--udesc-light); border-radius:6px; margin-bottom:12px;">
+        <label><input type="checkbox" id="showDatas" ${p.cronograma.showDatas ? 'checked' : ''}> Mostrar datas</label>
+        <label style="margin-left:16px;"><input type="checkbox" id="showCarga" ${p.cronograma.showCarga ? 'checked' : ''}> Mostrar carga horária</label>
+      </div>
+      <div id="modulosList"></div>
+      <button class="small" id="btnAddModulo">+ Adicionar módulo</button>
+    </div>
+  `;
+  col.appendChild(panelCron);
+  const useTable = panelCron.querySelector('#useTableView');
+  const tableOpts = panelCron.querySelector('#tableOptions');
+  useTable.addEventListener('change', ()=>{
+    ativo().cronograma.useTable = useTable.checked;
+    tableOpts.style.display = useTable.checked ? 'block' : 'none';
+    saveState(); renderPreview();
+  });
+  const showDatas = panelCron.querySelector('#showDatas');
+  showDatas.addEventListener('change', ()=>{
+    ativo().cronograma.showDatas = showDatas.checked;
+    saveState(); renderPreview();
+  });
+  const showCarga = panelCron.querySelector('#showCarga');
+  showCarga.addEventListener('change', ()=>{
+    ativo().cronograma.showCarga = showCarga.checked;
+    saveState(); renderPreview();
+  });
+  renderModulos(panelCron.querySelector('#modulosList'));
+  panelCron.querySelector('#btnAddModulo').addEventListener('click', ()=>{
+    ativo().cronograma.modulos.push({id:uid(), titulo:'Novo módulo', sessoes:[]});
+    saveState(); renderModulos(panelCron.querySelector('#modulosList')); renderPreview();
+  });
+
+  // Referências Bibliográficas
+  const panelRef = document.createElement('div');
+  panelRef.className = 'panel collapsed';
+  panelRef.innerHTML = `
+    <div class="panel-head"><h2>Referências Bibliográficas</h2><span class="chevron">›</span></div>
+    <div class="panel-body">
+      <div id="gruposRefList"></div>
+      <button class="small" id="btnAddGrupoRef">+ Adicionar grupo</button>
+    </div>
+  `;
+  col.appendChild(panelRef);
+  renderGruposReferencias(panelRef.querySelector('#gruposRefList'));
+  panelRef.querySelector('#btnAddGrupoRef').addEventListener('click', ()=>{
+    ativo().referencias.grupos.push({id:uid(), titulo:'', itens:[]});
+    saveState(); renderGruposReferencias(panelRef.querySelector('#gruposRefList')); renderPreview();
+  });
+
+  // Links
+  const panelLinks = document.createElement('div');
+  panelLinks.className = 'panel collapsed';
+  panelLinks.innerHTML = `
+    <div class="panel-head"><h2>Links Relacionados</h2><span class="chevron">›</span></div>
+    <div class="panel-body">
+      <div id="linksList"></div>
+      <button class="small" id="btnAddLink">+ Adicionar link</button>
+    </div>
+  `;
+  col.appendChild(panelLinks);
+  renderLinks(panelLinks.querySelector('#linksList'));
+  panelLinks.querySelector('#btnAddLink').addEventListener('click', ()=>{
+    ativo().links.push({id:uid(), texto:'', url:''});
+    saveState(); renderLinks(panelLinks.querySelector('#linksList')); renderPreview();
+  });
+
+  // Espaço de respiro - NOVO
+  const spacerHint = document.createElement('div');
+  spacerHint.className = 'spacer-input';
+  spacerHint.innerHTML = '💡 <strong>Dica:</strong> Use o botão "Adicionar espaço de respiro" em qualquer seção para inserir espaço em branco no documento impresso.';
+  col.appendChild(spacerHint);
+
+  // Listeners dos painéis
+  col.querySelectorAll('.panel-head').forEach(h => {
+    h.addEventListener('click', ()=> h.parentElement.classList.toggle('collapsed'));
+  });
+}
+
+function attachFieldListeners(container){
+  container.querySelectorAll('[data-f]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const parent = e.target.dataset.p || e.target.dataset.f;
+      if(e.target.dataset.p) {
+        ativo()[parent][e.target.dataset.f] = e.target.value;
+      } else {
+        ativo()[e.target.dataset.f] = e.target.value;
+      }
+      ultimaAlteracao = e.target.dataset.f;
+      saveState();
+      renderPreview();
+    });
+    // Auto-save também ao sair do campo
+    inp.addEventListener('blur', () => saveState());
+  });
+}
+
+function setupLogoUpload(){
+  const file = document.getElementById('logoFile');
+  const url = document.getElementById('logoUrl');
+  if(!file || !url) return;
+  file.addEventListener('change', e => {
+    if(e.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        ativo().cabecalho.logoDataUrl = ev.target.result;
+        saveState();
+        document.getElementById('logoPreview').innerHTML = `<img src="${ev.target.result}" style="height:100%;">`;
+        renderPreview();
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  });
+}
+
+function setupHorarios(){
+  const horariosText = document.getElementById('horarios');
+  if(horariosText) {
+    horariosText.addEventListener('blur', ()=>{
+      ativo().cabecalho.horarios = horariosText.value.split('\n').filter(h => h.trim());
+      saveState();
+      renderPreview();
+    });
+  }
+}
+
+function renderObjGeral(wrap){
+  wrap.innerHTML = '';
+  ativo().objGeral.forEach((obj, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <input type="text" class="obj-input" data-idx="${idx}" value="${escapeHtml(obj)}" placeholder="Objetivo geral...">
+      <button class="small danger" data-rm-obj="${idx}">remover</button>
+    `;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('.obj-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().objGeral[parseInt(e.target.dataset.idx)] = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-rm-obj]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      ativo().objGeral.splice(parseInt(e.target.dataset.rmObj), 1);
+      saveState(); renderObjGeral(wrap); renderPreview();
+    });
+  });
+}
+
+function renderObjEsp(wrap){
+  wrap.innerHTML = '';
+  ativo().objEsp.forEach((obj, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <input type="text" class="obj-input" data-idx="${idx}" value="${escapeHtml(obj)}" placeholder="Objetivo específico...">
+      <button class="small danger" data-rm-obj="${idx}">remover</button>
+    `;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('.obj-input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().objEsp[parseInt(e.target.dataset.idx)] = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-rm-obj]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      ativo().objEsp.splice(parseInt(e.target.dataset.rmObj), 1);
+      saveState(); renderObjEsp(wrap); renderPreview();
+    });
+  });
+}
+
+function renderInfos(wrap){
+  wrap.innerHTML = '';
+  const arr = ativo().infos || [];
+  arr.forEach((info, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <textarea data-info-text="${idx}">${escapeHtml(info)}</textarea>
+      <div class="add-row">
+        <button class="small" data-add-respiro="${idx}">+ Espaço de respiro</button>
+        <button class="small danger" data-rm-info="${idx}">remover</button>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('[data-info-text]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().infos[parseInt(e.target.dataset.infoText)] = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-add-respiro]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const idx = parseInt(e.target.dataset.addRespiro);
+      ativo().infos.splice(idx + 1, 0, '[ESPAÇO DE RESPIRO]');
+      saveState(); renderInfos(wrap); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-rm-info]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      ativo().infos.splice(parseInt(e.target.dataset.rmInfo), 1);
+      saveState(); renderInfos(wrap); renderPreview();
+    });
+  });
+}
+
+function renderIaLinhas(wrap){
+  wrap.innerHTML = '';
+  const arr = ativo().ia.linhas || [];
+  arr.forEach((l, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <input type="text" data-ia-tarefa="${idx}" value="${escapeHtml(l.tarefa)}" placeholder="Tarefa/uso de IA">
+      <select data-ia-status="${idx}">
+        <option ${l.status === 'Livre' ? 'selected' : ''}>Livre</option>
+        <option ${l.status === 'Condicional' ? 'selected' : ''}>Condicional</option>
+        <option ${l.status === 'Vedado' ? 'selected' : ''}>Vedado</option>
+      </select>
+      <textarea data-ia-condicoes="${idx}" placeholder="Condições e observações...">${escapeHtml(l.condicoes)}</textarea>
+      <button class="small danger" data-rm-ia="${idx}">remover</button>
+    `;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('[data-ia-tarefa]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().ia.linhas[parseInt(e.target.dataset.iaTarefa)].tarefa = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-ia-status]').forEach(sel => {
+    sel.addEventListener('change', e => {
+      ativo().ia.linhas[parseInt(e.target.dataset.iaStatus)].status = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-ia-condicoes]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().ia.linhas[parseInt(e.target.dataset.iaCondicoes)].condicoes = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-rm-ia]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      ativo().ia.linhas.splice(parseInt(e.target.dataset.rmIa), 1);
+      saveState(); renderIaLinhas(wrap); renderPreview();
+    });
+  });
+}
+
+function renderAvaliacoes(wrap){
+  wrap.innerHTML = '';
+  const arr = ativo().regime.avaliacoes || [];
+  if(arr.length === 0) wrap.innerHTML = '<div class="empty-hint">Nenhuma avaliação cadastrada.</div>';
+  arr.forEach((a, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-top"><strong>${escapeHtml(a.nome || 'Avaliação ' + (idx+1))}</strong>
+        <button class="small danger" data-rm-aval="${idx}">remover</button>
+      </div>
+      <div class="field"><label>Nome</label><input type="text" class="aval-nome" data-idx="${idx}" value="${escapeHtml(a.nome)}"></div>
+      <div class="field"><label>Descrição</label><textarea class="aval-desc" data-idx="${idx}">${escapeHtml(a.descricao)}</textarea></div>
+      <div class="field"><label>Data</label><input type="text" class="aval-data" data-idx="${idx}" value="${escapeHtml(a.data || '')}" placeholder="Ex: 15/09"></div>
+      <div class="row2">
+        <div class="field"><label>Método avaliativo</label><input type="text" class="aval-metodo" data-idx="${idx}" value="${escapeHtml(a.metodo || '')}"></div>
+        <div class="field"><label>Valor/Peso</label><input type="text" class="aval-valor" data-idx="${idx}" value="${escapeHtml(a.valor)}"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Critérios</label><input type="text" class="aval-crit" data-idx="${idx}" value="${escapeHtml(a.criterios)}"></div>
+        <div class="field"><label>Recuperação da Atividade</label><input type="text" class="aval-recuperacao" data-idx="${idx}" value="${escapeHtml(a.recuperacao || '')}"></div>
+      </div>
+      <div class="add-row">
+        <button class="small" data-add-respiro-aval="${idx}">+ Espaço de respiro</button>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('.aval-nome').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().regime.avaliacoes[parseInt(e.target.dataset.idx)].nome = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('.aval-metodo').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().regime.avaliacoes[parseInt(e.target.dataset.idx)].metodo = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('.aval-recuperacao').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().regime.avaliacoes[parseInt(e.target.dataset.idx)].recuperacao = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('.aval-desc').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().regime.avaliacoes[parseInt(e.target.dataset.idx)].descricao = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('.aval-valor').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().regime.avaliacoes[parseInt(e.target.dataset.idx)].valor = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('.aval-crit').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().regime.avaliacoes[parseInt(e.target.dataset.idx)].criterios = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('.aval-data').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().regime.avaliacoes[parseInt(e.target.dataset.idx)].data = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-rm-aval]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      ativo().regime.avaliacoes.splice(parseInt(e.target.dataset.rmAval), 1);
+      saveState(); renderAvaliacoes(wrap); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-add-respiro-aval]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const idx = parseInt(e.target.dataset.addRespiroAval);
+      ativo().regime.avaliacoes.splice(idx + 1, 0, {id:uid(), nome:'[ESPAÇO DE RESPIRO]', metodo:'', recuperacao:'', descricao:'', data:'', valor:'', criterios:''});
+      saveState(); renderAvaliacoes(wrap); renderPreview();
+    });
+  });
+}
+
+function renderModulos(wrap){
+  wrap.innerHTML = '';
+  const arr = ativo().cronograma.modulos || [];
+  if(arr.length === 0) wrap.innerHTML = '<div class="empty-hint">Nenhum módulo cadastrado.</div>';
+  arr.forEach((m, midx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const modTitleEdit = document.createElement('input');
+    modTitleEdit.type = 'text';
+    modTitleEdit.value = m.titulo;
+    modTitleEdit.style.width = '100%';
+    modTitleEdit.style.marginBottom = '12px';
+    modTitleEdit.addEventListener('input', e => {
+      ativo().cronograma.modulos[midx].titulo = e.target.value;
+      saveState(); renderPreview();
+    });
+    card.appendChild(modTitleEdit);
+    
+    const nested = document.createElement('div');
+    nested.className = 'nested';
+    renderSessoes(nested, m.sessoes || [], midx);
+    card.appendChild(nested);
+    
+    const btnAdd = document.createElement('button');
+    btnAdd.className = 'small';
+    btnAdd.textContent = '+ Sessão';
+    btnAdd.addEventListener('click', () => {
+      ativo().cronograma.modulos[midx].sessoes.push({id:uid(), data:'', topico:'', tag:'', observacao:'', bibliografia:'', carga:''});
+      saveState(); renderModulos(wrap); renderPreview();
+    });
+    card.appendChild(btnAdd);
+    
+    const btnRm = document.createElement('button');
+    btnRm.className = 'small danger';
+    btnRm.textContent = 'remover módulo';
+    btnRm.addEventListener('click', () => {
+      ativo().cronograma.modulos.splice(midx, 1);
+      saveState(); renderModulos(wrap); renderPreview();
+    });
+    card.appendChild(btnRm);
+    
+    wrap.appendChild(card);
+  });
+}
+
+function renderSessoes(wrap, sessoes, midx){
+  wrap.innerHTML = '';
+  sessoes.forEach((s, sidx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="field"><label>Data</label><input type="text" data-sess-data="${sidx}" value="${escapeHtml(s.data)}" placeholder="[13/03]"></div>
+      <div class="field"><label>Tópico</label><input type="text" data-sess-topico="${sidx}" value="${escapeHtml(s.topico)}"></div>
+      <div class="row2">
+        <div class="field"><label>Tag (tipo)</label><input type="text" data-sess-tag="${sidx}" value="${escapeHtml(s.tag)}" placeholder="TEÓRICA, SEMINÁRIO..."></div>
+        <div class="field"><label>Carga horária</label><input type="text" data-sess-carga="${sidx}" value="${escapeHtml(s.carga || '')}" placeholder="2h, 4h..."></div>
+      </div>
+      <div class="field"><label>Observação/Aviso</label><textarea data-sess-obs="${sidx}">${escapeHtml(s.observacao)}</textarea></div>
+      <div class="field"><label>Bibliografia</label><textarea data-sess-bib="${sidx}">${escapeHtml(s.bibliografia)}</textarea></div>
+      <div class="add-row">
+        <button class="small" data-add-respiro-sess="${sidx}">+ Espaço de respiro</button>
+        <button class="small danger" data-rm-sess="${sidx}">remover</button>
+      </div>
+    `;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('[data-sess-data]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().cronograma.modulos[midx].sessoes[parseInt(e.target.dataset.sessData)].data = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-sess-topico]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().cronograma.modulos[midx].sessoes[parseInt(e.target.dataset.sessTopico)].topico = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-sess-tag]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().cronograma.modulos[midx].sessoes[parseInt(e.target.dataset.sessTag)].tag = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-sess-carga]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().cronograma.modulos[midx].sessoes[parseInt(e.target.dataset.sessCarga)].carga = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-sess-obs]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().cronograma.modulos[midx].sessoes[parseInt(e.target.dataset.sessObs)].observacao = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-sess-bib]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().cronograma.modulos[midx].sessoes[parseInt(e.target.dataset.sessBib)].bibliografia = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-rm-sess]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      ativo().cronograma.modulos[midx].sessoes.splice(parseInt(e.target.dataset.rmSess), 1);
+      saveState(); renderSessoes(wrap, ativo().cronograma.modulos[midx].sessoes, midx); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-add-respiro-sess]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const sidx = parseInt(e.target.dataset.addRespiroSess);
+      ativo().cronograma.modulos[midx].sessoes.splice(sidx + 1, 0, {id:uid(), data:'[ESPAÇO]', topico:'', tag:'', observacao:'', bibliografia:'', carga:''});
+      saveState(); renderSessoes(wrap, ativo().cronograma.modulos[midx].sessoes, midx); renderPreview();
+    });
+  });
+}
+
+function renderGruposReferencias(wrap){
+  wrap.innerHTML = '';
+  const grupos = ativo().referencias.grupos || [];
+  grupos.forEach((g, gidx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:6px;">Título do grupo (ex: Bibliografia Básica, Obras clássicas, etc.)</label>
+        <input type="text" data-ref-titulo="${gidx}" value="${escapeHtml(g.titulo)}" placeholder="ex: Bibliografia Básica">
+        <button class="small danger" style="margin-top:8px;" data-rm-grupo="${gidx}">remover grupo</button>
+      </div>
+      <div id="itensRef${gidx}"></div>
+      <button class="small" data-add-item-ref="${gidx}">+ Adicionar referência</button>
+      <div style="margin-top:12px; padding:10px; background:var(--paper-alt); border-radius:6px; border:1px solid var(--line);">
+        <label style="font-size:11px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:6px;">Colar múltiplas referências (uma por linha):</label>
+        <textarea id="pasteRefs${gidx}" placeholder="Cole aqui várias referências (uma por linha)..." style="width:100%; min-height:80px; margin-bottom:8px; font-size:12px; font-family:var(--font-body); padding:8px; border:1px solid var(--line); border-radius:4px;"></textarea>
+        <button class="small" data-paste-refs="${gidx}">Adicionar referências coladas</button>
+      </div>
+    `;
+    wrap.appendChild(card);
+    renderItensReferencias(card.querySelector(`#itensRef${gidx}`), g.itens || [], gidx);
+    card.querySelector(`[data-ref-titulo]`).addEventListener('input', e => {
+      ativo().referencias.grupos[gidx].titulo = e.target.value;
+      saveState(); renderPreview();
+    });
+    card.querySelector(`[data-add-item-ref]`).addEventListener('click', () => {
+      ativo().referencias.grupos[gidx].itens.push({id:uid(), texto:''});
+      saveState(); renderGruposReferencias(wrap); renderPreview();
+    });
+    card.querySelector(`[data-rm-grupo]`).addEventListener('click', () => {
+      ativo().referencias.grupos.splice(gidx, 1);
+      saveState(); renderGruposReferencias(wrap); renderPreview();
+    });
+    card.querySelector(`[data-paste-refs]`).addEventListener('click', () => {
+      const textarea = card.querySelector(`#pasteRefs${gidx}`);
+      const refs = textarea.value.split('\n').filter(r => r.trim());
+      refs.forEach(ref => {
+        ativo().referencias.grupos[gidx].itens.push({id:uid(), texto:ref.trim()});
+      });
+      textarea.value = '';
+      saveState(); renderGruposReferencias(wrap); renderPreview();
+    });
+  });
+}
+
+function renderItensReferencias(wrap, itens, gidx){
+  wrap.innerHTML = '';
+  itens.forEach((item, iidx) => {
+    const div = document.createElement('div');
+    div.style.marginBottom = '8px';
+    div.innerHTML = `
+      <input type="text" data-item-ref="${gidx}-${iidx}" value="${escapeHtml(item.texto)}" placeholder="ex: AUTOR (ano). Título..." style="width:100%; margin-bottom:4px;">
+      <button class="small danger" data-rm-item-ref="${gidx}-${iidx}" style="font-size:10px; padding:2px 6px;">✕</button>
+    `;
+    wrap.appendChild(div);
+  });
+  wrap.querySelectorAll('[data-item-ref]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const [gidx, iidx] = e.target.dataset.itemRef.split('-');
+      ativo().referencias.grupos[parseInt(gidx)].itens[parseInt(iidx)].texto = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-rm-item-ref]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const [gidx, iidx] = e.target.dataset.rmItemRef.split('-');
+      ativo().referencias.grupos[parseInt(gidx)].itens.splice(parseInt(iidx), 1);
+      saveState(); renderGruposReferencias(document.querySelector('#editorCol').querySelector('[id^="gruposRefList"]')); renderPreview();
+    });
+  });
+}
+
+function renderLinks(wrap){
+  wrap.innerHTML = '';
+  const arr = ativo().links || [];
+  arr.forEach((l, idx) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <input type="text" data-link-texto="${idx}" value="${escapeHtml(l.texto)}" placeholder="Texto do link">
+      <input type="url" data-link-url="${idx}" value="${escapeHtml(l.url)}" placeholder="URL">
+      <button class="small danger" data-rm-link="${idx}">remover</button>
+    `;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('[data-link-texto]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().links[parseInt(e.target.dataset.linkTexto)].texto = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-link-url]').forEach(inp => {
+    inp.addEventListener('input', e => {
+      ativo().links[parseInt(e.target.dataset.linkUrl)].url = e.target.value;
+      saveState(); renderPreview();
+    });
+  });
+  wrap.querySelectorAll('[data-rm-link]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      ativo().links.splice(parseInt(e.target.dataset.rmLink), 1);
+      saveState(); renderLinks(wrap); renderPreview();
+    });
+  });
+}
+
+/* ==================== PREVIEW ==================== */
+function renderPreview(){
+  const p = ativo();
+  document.documentElement.style.setProperty('--doc-accent', p.cabecalho.cor || '#0d4a8f');
+  const sheet = document.getElementById('previewSheet');
+  let html = '';
+
+  html += '<div class="doc-header">';
+  if(p.cabecalho.logoDataUrl) html += `<img src="${p.cabecalho.logoDataUrl}" alt="logo">`;
+  if(p.cabecalho.instituicao) html += `<span class="inst">${escapeHtml(p.cabecalho.instituicao)}</span>`;
+  html += '</div>';
+
+  html += '<div class="doc-title">';
+  html += `<h1>${escapeHtml(p.cabecalho.disciplina || 'Nome da disciplina')}</h1>`;
+  if(p.cabecalho.subtitulo) html += `<div class="subt">${escapeHtml(p.cabecalho.subtitulo)}</div>`;
+  if(p.cabecalho.professor) html += `<div class="prof">${escapeHtml(p.cabecalho.professor)}</div>`;
+  if(p.cabecalho.email) html += `<div class="email">${escapeHtml(p.cabecalho.email)}</div>`;
+  html += '</div>';
+
+  if(p.ementa){ html += `<h2 class="sec">Ementa</h2><p>${nl2br(p.ementa)}</p>`; }
+  if(p.cabecalho.turma){ html += `<h2 class="sec">Turma</h2><p>${escapeHtml(p.cabecalho.turma)}</p>`; }
+  if((p.cabecalho.horarios||[]).length){
+    html += `<h2 class="sec">Horários</h2><ul>` + p.cabecalho.horarios.map(h=>`<li>${escapeHtml(h)}</li>`).join('') + `</ul>`;
+  }
+
+  if((p.objGeral||[]).length || (p.objEsp||[]).length){
+    html += `<h2 class="sec">Objetivos</h2>`;
+    if(p.objGeral.length){ html += `<h3 class="sub">Objetivo geral</h3><ul>` + p.objGeral.map(o=>`<li>${escapeHtml(o)}</li>`).join('') + `</ul>`; }
+    if(p.objEsp.length){ html += `<h3 class="sub">Objetivos específicos</h3><ul>` + p.objEsp.map(o=>`<li>${escapeHtml(o)}</li>`).join('') + `</ul>`; }
+  }
+
+  if(p.metodologia){ html += `<h2 class="sec">Proposta da disciplina</h2><p>${nl2br(p.metodologia)}</p>`; }
+
+  if((p.infos||[]).length){
+    html += `<h2 class="sec">Informações Importantes</h2>`;
+    p.infos.forEach(info => {
+      if(info === '[ESPAÇO DE RESPIRO]') {
+        html += `<div style="page-break-inside:avoid; min-height:60px;"></div>`;
+      } else {
+        html += `<p>${nl2br(info)}</p>`;
+      }
+    });
+  }
+
+  if(p.ia.ativa){
+    html += `<h2 class="sec">Política de IA da disciplina</h2>`;
+    if(p.ia.intro) html += `<p>${nl2br(p.ia.intro)}</p>`;
+    if((p.ia.linhas||[]).length){
+      html += `<table class="ia"><thead><tr><th>Tarefa / uso de IA</th><th>Status</th><th>Condições e observações</th></tr></thead><tbody>`;
+      p.ia.linhas.forEach(l=>{
+        const st = (l.status||'').toLowerCase();
+        html += `<tr class="${st}"><td>${escapeHtml(l.tarefa)}</td><td class="status">${escapeHtml(l.status)}</td><td>${escapeHtml(l.condicoes)}</td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+  }
+
+  if((p.regime.avaliacoes||[]).length){
+    html += `<h2 class="sec">Regime Avaliativo</h2>`;
+    if(p.regime.obs) html += `<p style="font-style:italic;">${escapeHtml(p.regime.obs)}</p>`;
+    p.regime.avaliacoes.forEach(a=>{
+      if(a.nome === '[ESPAÇO DE RESPIRO]') {
+        html += `<div style="page-break-inside:avoid; min-height:60px;"></div>`;
+      } else {
+        html += `<div class="eval-block"><h3 class="sub">${escapeHtml(a.nome)}</h3>`;
+        if(a.descricao) html += `<p>${nl2br(a.descricao)}</p>`;
+        if(a.data) html += `<p><span class="label">Data: </span>${escapeHtml(a.data)}</p>`;
+        if(a.metodo) html += `<p><span class="label">Método: </span>${escapeHtml(a.metodo)}</p>`;
+        if(a.valor) html += `<p><span class="label">Valor: </span>${escapeHtml(a.valor)}</p>`;
+        if(a.criterios) html += `<p><span class="label">Critérios: </span>${linhas(a.criterios).join('; ')}</p>`;
+        if(a.recuperacao) html += `<p><span class="label">Recuperação: </span>${escapeHtml(a.recuperacao)}</p>`;
+        html += `</div>`;
+      }
+    });
+  }
+
+  if((p.cronograma.modulos||[]).length){
+    html += `<h2 class="sec">Cronograma</h2>`;
+    if(p.cronograma.useTable) {
+      // TABELA
+      let colCount = 1; // Tópico
+      if(p.cronograma.showDatas) colCount++;
+      if(p.cronograma.showCarga) colCount++;
+
+      html += `<table class="schedule"><thead><tr>`;
+      if(p.cronograma.showDatas) html += `<th style="width:15%;">Data</th>`;
+      html += `<th>Tópico</th>`;
+      // Tipo é sempre opcional agora - não mostra coluna se não houver nenhum tipo
+      let temTipo = p.cronograma.modulos.some(m => (m.sessoes||[]).some(s => s.tag));
+      if(temTipo) html += `<th style="width:15%;">Tipo</th>`;
+      if(p.cronograma.showCarga) html += `<th style="width:12%;">Carga</th>`;
+      html += `</tr></thead><tbody>`;
+      p.cronograma.modulos.forEach(m=>{
+        const modColspan = colCount + (temTipo ? 1 : 0);
+        html += `<tr><td colspan="${modColspan}" style="font-weight:bold; background:var(--udesc-light); padding:12px 8px;">${escapeHtml(m.titulo)}</td></tr>`;
+        (m.sessoes||[]).forEach(s=>{
+          if(s.data !== '[ESPAÇO]') {
+            html += `<tr>`;
+            if(p.cronograma.showDatas) html += `<td>${escapeHtml(s.data)}</td>`;
+            let topicContent = escapeHtml(s.topico);
+            if(s.observacao) topicContent += '<br><em style="font-size:13px;color:#d97706;font-weight:500;">'+escapeHtml(s.observacao)+'</em>';
+            if(s.bibliografia) topicContent += '<br><strong style="font-size:13px;color:var(--accent);">Referências:</strong>';
+            html += `<td>${topicContent}`;
+            if(s.bibliografia) linhas(s.bibliografia).forEach(b=> html += `<br><span style="font-size:15px; color:#555;">${escapeHtml(b)}</span>`);
+            html += `</td>`;
+            if(temTipo) html += `<td>${s.tag ? `<span class="topic-tag">${escapeHtml(s.tag)}</span>` : ''}</td>`;
+            if(p.cronograma.showCarga) html += `<td>${s.carga ? `<span class="topic-carga">${escapeHtml(s.carga)}</span>` : ''}</td>`;
+            html += `</tr>`;
+          }
+        });
+      });
+      html += `</tbody></table>`;
+    } else {
+      // FORMA TRADICIONAL
+      p.cronograma.modulos.forEach(m=>{
+        html += `<h3 class="sub">${escapeHtml(m.titulo)}</h3>`;
+        (m.sessoes||[]).forEach((s, i)=>{
+          if(s.data === '[ESPAÇO]') {
+            html += `<div style="page-break-inside:avoid; min-height:60px;"></div>`;
+          } else {
+            if(s.data) html += `<div class="topic-date">${escapeHtml(s.data)}</div>`;
+            if(s.tag) html += `<div class="topic-tag">${escapeHtml(s.tag)}</div>`;
+            if(s.carga) html += `<div class="topic-carga">${escapeHtml(s.carga)}</div>`;
+            if(s.topico) html += `<div class="topic-title">${escapeHtml(s.topico)}</div>`;
+            if(s.observacao) html += `<div class="alert" style="background:#fef3c7; border-color:#fcd34d; color:#d97706;">${nl2br(s.observacao)}</div>`;
+            linhas(s.bibliografia).forEach(b=> html += `<div class="bib">${escapeHtml(b)}</div>`);
+            if(i < m.sessoes.length-1) html += `<hr class="div">`;
+          }
+        });
+      });
+    }
+  }
+
+  if((p.referencias.grupos||[]).length){
+    html += `<h2 class="sec">Referências Bibliográficas</h2>`;
+    p.referencias.grupos.forEach(g=>{
+      if(g.titulo) html += `<h3 class="bib-subtitle">${escapeHtml(g.titulo)}</h3>`;
+      (g.itens||[]).forEach(item => {
+        if(item.texto) html += `<div class="bib">${escapeHtml(item.texto)}</div>`;
+      });
+    });
+  }
+
+  if((p.links||[]).length){
+    html += `<h2 class="sec">Links Relacionados</h2><ul class="links">` +
+      p.links.map(l=> `<li>${l.url ? `<a href="${escapeHtml(l.url)}" target="_blank">${escapeHtml(l.texto)}</a>` : escapeHtml(l.texto)}</li>`).join('') +
+      `</ul>`;
+  }
+
+  sheet.innerHTML = html;
+}
+
+/* ==================== UTILITIES ==================== */
+function escapeHtml(text){
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
+}
+
+function nl2br(text){
+  return (text || '').replace(/\n/g, '<br>');
+}
+
+function linhas(text){
+  return (text || '').split('\n').filter(l => l.trim());
+}
+
+function setupMarkdownToolbar(container){
+  const toolbar = container.querySelector('.markdown-toolbar');
+  const textarea = container.querySelector('.markdown-textarea');
+  if(!toolbar || !textarea) return;
+
+  toolbar.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selected = textarea.value.substring(start, end) || 'texto';
+      let replacement = '';
+
+      if(btn.dataset.bold) replacement = `**${selected}**`;
+      else if(btn.dataset.italic) replacement = `*${selected}*`;
+      else if(btn.dataset.code) replacement = `\`${selected}\``;
+      else if(btn.dataset.ul) replacement = `- ${selected}`;
+      else if(btn.dataset.link) replacement = `[${selected}](url)`;
+
+      textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+      textarea.selectionStart = start + replacement.length;
+      textarea.selectionEnd = start + replacement.length;
+      textarea.focus();
+      textarea.dispatchEvent(new Event('input'));
+    });
+  });
+}
+
+function adicionarEspacoRespiro(){
+  const p = ativo();
+
+  // Tenta adicionar espaço na seção mais relevante baseado no que há no plano
+  // Prioridade: Informações Importantes > Cronograma > Regime Avaliativo
+
+  if(p.infos && p.infos.length > 0) {
+    p.infos.push('[ESPAÇO DE RESPIRO]');
+  } else if(p.cronograma.modulos && p.cronograma.modulos.length > 0) {
+    const lastModulo = p.cronograma.modulos[p.cronograma.modulos.length - 1];
+    if(lastModulo.sessoes) {
+      lastModulo.sessoes.push({id:uid(), data:'[ESPAÇO]', topico:'', tag:'', observacao:'', bibliografia:'', carga:''});
+    }
+  } else if(p.regime.avaliacoes && p.regime.avaliacoes.length > 0) {
+    p.regime.avaliacoes.push({id:uid(), nome:'', metodo:'', recuperacao:'', descricao:'', data:'', valor:'', criterios:''});
+    // Marcar como espaço
+    p.regime.avaliacoes[p.regime.avaliacoes.length - 1].nome = '[ESPAÇO DE RESPIRO]';
+  } else {
+    p.infos.push('[ESPAÇO DE RESPIRO]');
+  }
+
+  saveState(); renderEditor(); renderPreview();
+}
+
+/* Exportar/Importar JSON */
+document.addEventListener('DOMContentLoaded', () => {
+  const btnNovo = document.getElementById('btnNovoPlan');
+  const btnDuplicar = document.getElementById('btnDuplicarPlan');
+  const btnEspaco = document.getElementById('btnEspacoRespiro');
+  const btnExportJson = document.getElementById('btnExportJson');
+  const btnImportJson = document.getElementById('btnImportJson');
+
+  if(btnNovo) btnNovo.addEventListener('click', () => {
+    newPlano();
+    renderEditor();
+    renderPreview();
+  });
+
+  if(btnDuplicar) btnDuplicar.addEventListener('click', duplicarPlano);
+
+  if(btnEspaco) btnEspaco.addEventListener('click', adicionarEspacoRespiro);
+
+  if(btnExportJson) btnExportJson.addEventListener('click', () => {
+    const json = JSON.stringify(planos[ativo_id], null, 2);
+    const blob = new Blob([json], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${ativo().cabecalho.disciplina || 'plano'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  if(btnImportJson) btnImportJson.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        try {
+          const imported = JSON.parse(evt.target.result);
+          const id = uid();
+          imported.id = id;
+          planos[id] = imported;
+          ativo_id = id;
+          saveState();
+          renderEditor();
+          renderPreview();
+          alert('Plano importado com sucesso!');
+        } catch(err) {
+          alert('Erro ao importar JSON: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+    input.click();
+  });
+
+  const btnExportDocx = document.getElementById('btnExportDocx');
+  if(btnExportDocx) btnExportDocx.addEventListener('click', async ()=> {
+    const p = ativo();
+    const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle } = window.docx;
+
+    const sections = [];
+  
+  // Título
+  sections.push(new Paragraph({
+    text: p.cabecalho.disciplina || 'Plano de Ensino',
+    heading: HeadingLevel.HEADING_1,
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 200 }
+  }));
+  
+  if(p.cabecalho.subtitulo) {
+    sections.push(new Paragraph({
+      text: p.cabecalho.subtitulo,
+      heading: HeadingLevel.HEADING_2,
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 100 }
+    }));
+  }
+  
+  if(p.cabecalho.professor) {
+    sections.push(new Paragraph({
+      text: `Prof. ${p.cabecalho.professor}`,
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 100 }
+    }));
+  }
+  
+  if(p.cabecalho.email) {
+    sections.push(new Paragraph({
+      text: p.cabecalho.email,
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 200 }
+    }));
+  }
+  
+  // Ementa
+  if(p.ementa) {
+    sections.push(new Paragraph({
+      text: 'Ementa',
+      heading: HeadingLevel.HEADING_2,
+      spacing: { before: 200, after: 100 }
+    }));
+    sections.push(new Paragraph({
+      text: p.ementa,
+      spacing: { after: 200 }
+    }));
+  }
+  
+  // Objetivos
+  if((p.objGeral||[]).length || (p.objEsp||[]).length) {
+    sections.push(new Paragraph({
+      text: 'Objetivos',
+      heading: HeadingLevel.HEADING_2,
+      spacing: { before: 200, after: 100 }
+    }));
+    if(p.objGeral.length) {
+      sections.push(new Paragraph({
+        text: 'Objetivo Geral:',
+        heading: HeadingLevel.HEADING_3,
+        spacing: { after: 100 }
+      }));
+      p.objGeral.forEach(obj => {
+        sections.push(new Paragraph({
+          text: obj,
+          spacing: { after: 50 }
+        }));
+      });
+    }
+    if(p.objEsp.length) {
+      sections.push(new Paragraph({
+        text: 'Objetivos Específicos:',
+        heading: HeadingLevel.HEADING_3,
+        spacing: { before: 100, after: 100 }
+      }));
+      p.objEsp.forEach(obj => {
+        sections.push(new Paragraph({
+          text: obj,
+          spacing: { after: 50 }
+        }));
+      });
+    }
+  }
+  
+  // Proposta da disciplina (Metodologia)
+  if(p.metodologia) {
+    sections.push(new Paragraph({
+      text: 'Proposta da disciplina',
+      heading: HeadingLevel.HEADING_2,
+      spacing: { before: 200, after: 100 }
+    }));
+    sections.push(new Paragraph({
+      text: p.metodologia,
+      spacing: { after: 200 }
+    }));
+  }
+  
+  // Cronograma
+  if((p.cronograma.modulos||[]).length) {
+    sections.push(new Paragraph({
+      text: 'Cronograma',
+      heading: HeadingLevel.HEADING_2,
+      spacing: { before: 200, after: 100 }
+    }));
+    
+    p.cronograma.modulos.forEach(m => {
+      sections.push(new Paragraph({
+        text: m.titulo,
+        heading: HeadingLevel.HEADING_3,
+        spacing: { before: 100, after: 100 }
+      }));
+      
+      (m.sessoes||[]).forEach(s => {
+        let sessaoText = '';
+        if(s.data) sessaoText += `Data: ${s.data} | `;
+        if(s.tag) sessaoText += `Tipo: ${s.tag} | `;
+        if(s.carga) sessaoText += `Carga: ${s.carga} | `;
+        if(s.topico) sessaoText += `${s.topico}`;
+        if(sessaoText) {
+          sections.push(new Paragraph({
+            text: sessaoText,
+            spacing: { after: 50 }
+          }));
+        }
+        if(s.observacao) {
+          sections.push(new Paragraph({
+            text: `Obs: ${s.observacao}`,
+            spacing: { after: 50 }
+          }));
+        }
+      });
+    });
+  }
+  
+  // Referências
+  if((p.referencias.grupos||[]).length) {
+    sections.push(new Paragraph({
+      text: 'Referências Bibliográficas',
+      heading: HeadingLevel.HEADING_2,
+      spacing: { before: 200, after: 100 }
+    }));
+    
+    p.referencias.grupos.forEach(g => {
+      if(g.titulo) {
+        sections.push(new Paragraph({
+          text: g.titulo,
+          heading: HeadingLevel.HEADING_3,
+          spacing: { before: 100, after: 100 }
+        }));
+      }
+      (g.itens||[]).forEach(item => {
+        if(item.texto) {
+          sections.push(new Paragraph({
+            text: item.texto,
+            spacing: { after: 50 }
+          }));
+        }
+      });
+    });
+  }
+  
+  const doc = new Document({ sections: [{ children: sections }] });
+  
+    Packer.toBlob(doc).then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${p.cabecalho.disciplina || 'plano'}.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  });
+
+  const btnExportHtml = document.getElementById('btnExportHtml');
+  if(btnExportHtml) btnExportHtml.addEventListener('click', () => {
+    const p = ativo();
+    const sheet = document.getElementById('previewSheet');
+    const title = p.cabecalho.disciplina || 'Plano de Ensino';
+    const html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>' + title + '</title><style>body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; color: #333; line-height: 1.6; } h1 { color: #0d4a8f; border-bottom: 3px solid #2d7d4f; padding-bottom: 10px; } h2 { color: #0d4a8f; border-bottom: 2px solid #2d7d4f; padding-bottom: 6px; margin-top: 30px; } h3 { color: #2d7d4f; margin-top: 20px; } .bib { font-size: 15px; margin: 10px 0; } .alert { background: #fef3c7; border-left: 4px solid #d97706; padding: 12px; margin: 15px 0; font-size: 14px; } .eval-block { margin: 20px 0; padding: 15px; border-left: 4px solid #2d7d4f; background: #f9f9f9; } table { width: 100%; border-collapse: collapse; margin: 15px 0; } th, td { border: 1px solid #ddd; padding: 12px; text-align: left; } th { background: #0d4a8f; color: white; } tr.livre td { background: #e8f0ea; } tr.condicional td { background: #fbf1d9; } tr.vedado td { background: #f7e9e3; } ul { padding-left: 20px; } li { margin: 8px 0; }</style></head><body>' + sheet.innerHTML + '</body></html>';
+
+    const blob = new Blob([html], {type: 'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = title + '.html';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  const btnExportMarkdown = document.getElementById('btnExportMarkdown');
+  if(btnExportMarkdown) btnExportMarkdown.addEventListener('click', () => {
+    const p = ativo();
+    let md = `# ${p.cabecalho.disciplina || 'Plano de Ensino'}\n\n`;
+
+    if(p.cabecalho.professor) md += `**Professor:** ${p.cabecalho.professor}\n`;
+    if(p.cabecalho.email) md += `**Email:** ${p.cabecalho.email}\n`;
+    if(p.cabecalho.turma) md += `**Turma:** ${p.cabecalho.turma}\n\n`;
+
+    if(p.ementa) md += `## Ementa\n${p.ementa}\n\n`;
+
+    if((p.objGeral||[]).length || (p.objEsp||[]).length) {
+      md += `## Objetivos\n`;
+      if(p.objGeral.length) {
+        md += `### Objetivo Geral\n`;
+        p.objGeral.forEach(o => md += `- ${o}\n`);
+        md += '\n';
+      }
+      if(p.objEsp.length) {
+        md += `### Objetivos Específicos\n`;
+        p.objEsp.forEach(o => md += `- ${o}\n`);
+        md += '\n';
+      }
+    }
+
+    if(p.metodologia) md += `## Proposta da Disciplina\n${p.metodologia}\n\n`;
+
+    if((p.regime.avaliacoes||[]).length) {
+      md += `## Regime Avaliativo\n`;
+      if(p.regime.obs) md += `${p.regime.obs}\n\n`;
+      p.regime.avaliacoes.forEach(a => {
+        if(a.nome !== '[ESPAÇO DE RESPIRO]') {
+          md += `### ${a.nome}\n`;
+          if(a.descricao) md += `${a.descricao}\n`;
+          if(a.data) md += `**Data:** ${a.data}\n`;
+          if(a.metodo) md += `**Método:** ${a.metodo}\n`;
+          if(a.valor) md += `**Valor:** ${a.valor}\n`;
+          if(a.criterios) md += `**Critérios:** ${a.criterios}\n`;
+          if(a.recuperacao) md += `**Recuperação:** ${a.recuperacao}\n\n`;
+        }
+      });
+    }
+
+    if((p.cronograma.modulos||[]).length) {
+      md += `## Cronograma\n`;
+      p.cronograma.modulos.forEach(m => {
+        md += `### ${m.titulo}\n`;
+        (m.sessoes||[]).forEach(s => {
+          if(s.data !== '[ESPAÇO]') {
+            if(s.data) md += `**Data:** ${s.data} | `;
+            if(s.tag) md += `**Tipo:** ${s.tag} | `;
+            if(s.carga) md += `**Carga:** ${s.carga}\n`;
+            if(s.topico) md += `${s.topico}\n`;
+            if(s.observacao) md += `> ⚠️ ${s.observacao}\n`;
+            if(s.bibliografia) md += `**Referências:** ${s.bibliografia}\n`;
+            md += '\n';
+          }
+        });
+      });
+    }
+
+    if((p.referencias.grupos||[]).length) {
+      md += `## Referências Bibliográficas\n`;
+      p.referencias.grupos.forEach(g => {
+        if(g.titulo) md += `### ${g.titulo}\n`;
+        (g.itens||[]).forEach(item => {
+          if(item.texto) md += `- ${item.texto}\n`;
+        });
+        md += '\n';
+      });
+    }
+
+    const blob = new Blob([md], {type: 'text/markdown'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${p.cabecalho.disciplina || 'plano'}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+});
+
+/* ==================== AUTO-SAVE ==================== */
+setInterval(() => {
+  if(ativo_id) saveState();
+}, 3000); // Auto-save a cada 3 segundos
+
+// Também salva ao sair da página
+window.addEventListener('beforeunload', () => {
+  saveState();
+});
+
+/* ==================== INIT ==================== */
+renderEditor();
+renderPreview();
+updatePlanosDropdown();
+</script>
+</body>
+</html>

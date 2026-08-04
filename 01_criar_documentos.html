@@ -1,0 +1,2027 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Criador de Documentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b2a4a;
+    --ink-soft:#445070;
+    --paper:#faf8f4;
+    --paper-alt:#f1ede4;
+    --line:#dcd5c6;
+    --accent:#2d7d4f;
+    --accent-strong:#1d5239;
+    --udesc-blue:#0d4a8f;
+    --udesc-light:#e8f0f7;
+    --good:#3f6e52; --good-bg:#e8f0ea;
+    --warn:#a8492b; --warn-bg:#f7e9e3;
+    --white:#ffffff;
+    --radius:10px;
+    --font-display:'Source Serif 4', Georgia, serif;
+    --font-body:'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono:'IBM Plex Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body); font-size:14px; line-height:1.6;}
+
+  header.appbar{
+    background:linear-gradient(135deg, var(--udesc-blue) 0%, var(--accent) 100%);
+    color:var(--paper); padding:16px 24px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    border-bottom:4px solid var(--accent); position:sticky; top:0; z-index:400;
+    box-shadow:0 2px 8px rgba(13,74,143,.2);
+  }
+  header.appbar h1{font-family:var(--font-display); font-weight:600; font-size:20px; margin:0;}
+  header.appbar .sub{font-size:11.5px; opacity:.72; font-family:var(--font-mono);}
+  .appbar-controls{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  #savedDocsSelect{
+    font-family:var(--font-body); font-size:12.5px; font-weight:600; padding:6px 10px; border-radius:7px;
+    border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.1); color:var(--paper); cursor:pointer;
+    max-width:220px;
+  }
+  #savedDocsSelect option{ color:#1b2a4a; }
+  #autosaveStatus{font-size:10.5px; color:var(--paper); opacity:.75; font-family:var(--font-mono);}
+  #pagesSelect{
+    font-family:var(--font-body); font-size:12.5px; font-weight:600; padding:6px 10px; border-radius:7px;
+    border:1px solid rgba(255,255,255,.35); background:rgba(255,255,255,.1); color:var(--paper); cursor:pointer;
+    max-width:140px;
+  }
+  #pagesSelect option{ color:#1b2a4a; }
+
+  button{
+    font-family:var(--font-body); font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:7px;
+    border:1px solid var(--line); background:var(--white); color:var(--ink); cursor:pointer;
+  }
+  button:hover{box-shadow:0 2px 6px rgba(0,0,0,.08);}
+  button.primary{background:var(--accent); border-color:var(--accent-strong); color:#fff;}
+  button.primary:hover{background:var(--accent-strong);}
+  button.ghost{background:transparent; border-color:rgba(255,255,255,.35); color:var(--paper);}
+  button.ghost:hover{background:rgba(255,255,255,.1);}
+  button.small{padding:4px 9px; font-size:11.5px;}
+  button.active{background:var(--udesc-light); border-color:var(--udesc-blue); color:var(--udesc-blue);}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+
+  .layout{display:grid; grid-template-columns:340px 1fr; gap:0; align-items:start;}
+  @media (max-width:980px){ .layout{grid-template-columns:1fr;} }
+
+  #editorCol{padding:16px; max-height:calc(100vh - 64px); overflow-y:auto; border-right:1px solid var(--line);}
+  #canvasCol{max-height:calc(100vh - 64px); overflow:hidden; display:flex; flex-direction:column;}
+
+  .panel{background:var(--white); border:1px solid var(--line); border-radius:var(--radius); margin-bottom:14px; overflow:hidden;}
+  .panel > .panel-head{display:flex; align-items:center; justify-content:space-between; padding:11px 14px; cursor:pointer; background:var(--paper-alt); border-bottom:2px solid var(--udesc-light); border-left:4px solid var(--accent);}
+  .panel > .panel-head h2{font-family:var(--font-display); font-size:14.5px; margin:0; font-weight:600; color:var(--udesc-blue);}
+  .panel > .panel-head .chevron{transition:transform .2s ease; color:var(--ink-soft); font-size:12px;}
+  .panel.collapsed > .panel-body{display:none;}
+  .panel.collapsed .chevron{transform:rotate(-90deg);}
+  .panel > .panel-body{padding:14px;}
+
+  .field{display:flex; flex-direction:column; gap:4px; margin-bottom:10px;}
+  .field label{font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); font-weight:600;}
+  .field input, .field select{font-family:var(--font-body); font-size:13px; padding:6px 9px; border:1px solid var(--line); border-radius:7px; background:var(--white); color:var(--ink); width:100%;}
+  .field input[type=checkbox]{width:auto;}
+  .field-inline{display:flex; align-items:center; gap:6px; margin-bottom:8px; font-size:12px; color:var(--ink-soft); font-weight:600;}
+  .field-inline input[type=checkbox]{width:auto;}
+  .hint{font-size:11px; color:var(--ink-soft); margin-top:2px; line-height:1.5;}
+  .row2{display:flex; gap:8px;}
+  .row2 > .field{flex:1;}
+
+  .controls-inline{display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:10px; background:var(--paper-alt); border-radius:6px; margin-bottom:10px;}
+  .controls-inline label{font-size:11.5px; font-weight:600; color:var(--ink-soft); margin:0; min-width:auto;}
+  .controls-inline input[type=range]{flex:1; min-width:60px;}
+  .controls-inline span{font-size:11.5px; color:var(--ink); font-weight:600; min-width:34px; text-align:right;}
+
+  .drop-zone{border:2px dashed var(--accent); border-radius:8px; padding:16px; text-align:center; cursor:pointer; background:var(--paper-alt); transition:all .2s ease; margin-bottom:10px;}
+  .drop-zone:hover{background:var(--udesc-light); border-color:var(--accent-strong);}
+  .drop-zone.active{background:var(--udesc-light); border-color:var(--accent-strong); box-shadow:0 0 0 3px rgba(45,125,79,.15);}
+  .drop-zone p{margin:0; color:var(--ink-soft); font-size:11.5px;}
+  .drop-zone .icon{font-size:26px; margin-bottom:4px;}
+
+  .btn-grid{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px;}
+  .btn-grid button{width:100%;}
+  .shape-row{display:flex; gap:6px; margin-bottom:10px;}
+  .shape-row button{flex:1;}
+
+  .toggle-row{display:flex; gap:6px; margin-bottom:8px;}
+  .toggle-row button{flex:1; padding:6px; font-size:14px;}
+
+  .props-empty{font-size:12px; color:var(--ink-soft); text-align:center; padding:20px 8px;}
+  .props-section{border-top:1px solid var(--line); padding-top:10px; margin-top:10px;}
+  .props-section:first-child{border-top:none; padding-top:0; margin-top:0;}
+  .props-section h3{font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--udesc-blue); margin:0 0 8px; font-weight:700;}
+
+  .color-row{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .color-row input[type=color]{width:34px; height:30px; padding:2px; border:1px solid var(--line); border-radius:6px; cursor:pointer;}
+  .color-row label{font-size:11.5px; font-weight:600; color:var(--ink-soft); flex:1;}
+
+  /* PAGES PANEL */
+  #pagesList{display:flex; flex-direction:column; gap:6px; margin-bottom:10px; max-height:180px; overflow-y:auto;}
+  .page-chip{display:flex; align-items:center; justify-content:space-between; padding:7px 10px; border:1px solid var(--line); border-radius:6px; font-size:12px; cursor:pointer; background:var(--paper-alt);}
+  .page-chip.active{background:var(--udesc-light); border-color:var(--udesc-blue); color:var(--udesc-blue); font-weight:600;}
+  .page-chip-del{color:var(--warn); font-weight:700; padding:0 4px;}
+  .page-chip-del:hover{opacity:.7;}
+
+  /* CANVAS */
+  .canvas-toolbar{display:flex; align-items:center; justify-content:space-between; padding:10px 20px; background:var(--paper-alt); border-bottom:1px solid var(--line); gap:12px; flex-wrap:wrap;}
+  .zoom-controls{display:flex; align-items:center; gap:8px;}
+  .zoom-controls input[type=range]{width:120px;}
+  .zoom-controls span{font-size:12px; font-weight:600; color:var(--ink-soft); min-width:38px;}
+  #pageIndicator{font-size:12px; font-weight:600; color:var(--udesc-blue); font-family:var(--font-mono);}
+  .page-nav{display:flex; align-items:center; gap:6px;}
+
+  .canvas-scroll{flex:1; overflow:auto; background:#e6e0d1; padding:36px 20px;}
+  #pageWrapper{transform-origin: top center; width:fit-content; margin:0 auto;}
+  #pageCanvas.page{
+    position:relative; background:#fff; box-shadow:0 8px 30px rgba(13,74,143,.2);
+    border-top:8px solid var(--udesc-blue); overflow:visible;
+  }
+
+  .el-body{position:absolute; box-sizing:border-box; overflow-wrap:break-word;}
+  .el-body.selected{outline:2px solid var(--udesc-blue); outline-offset:1px;}
+  .el-text ul, .el-text ol{margin:0; padding-left:26px;}
+  .el-text ul{list-style-type:disc;}
+  .el-text ul ul{list-style-type:circle;}
+  .el-text ul ul ul{list-style-type:square;}
+  .el-text ul ul ul ul{list-style-type:'– ';}
+  .el-text li{margin-bottom:6px;}
+  .el-text:focus{cursor:text;}
+  /* Enter cria um novo parágrafo (div); Shift+Enter cria uma quebra de linha
+     (br) dentro do mesmo parágrafo — por isso o espaço extra vai só nos divs. */
+  .el-text-inner div{margin:0 0 0.6em;}
+  .el-text-inner a{color:var(--udesc-blue); text-decoration:underline;}
+  .el-video iframe{display:block;}
+
+  .rh{position:absolute; width:10px; height:10px; background:#fff; border:2px solid var(--udesc-blue); border-radius:2px; display:none; z-index:50;}
+  .el-body.selected .rh{display:block;}
+  .rh-nw{left:-6px; top:-6px; cursor:nwse-resize;}
+  .rh-ne{right:-6px; top:-6px; cursor:nesw-resize;}
+  .rh-sw{left:-6px; bottom:-6px; cursor:nesw-resize;}
+  .rh-se{right:-6px; bottom:-6px; cursor:nwse-resize;}
+  .rh-w{left:-6px; top:50%; transform:translateY(-50%); cursor:ew-resize;}
+  .rh-e{right:-6px; top:50%; transform:translateY(-50%); cursor:ew-resize;}
+
+  .footer-note{max-width:1400px; margin:0 auto; padding:8px 24px 16px; font-size:11px; color:var(--ink-soft);}
+
+  @media print{
+    header.appbar, #editorCol, .canvas-toolbar{display:none;}
+    .canvas-scroll{overflow:visible; padding:0; background:#fff;}
+    #pageWrapper{transform:none !important;}
+    #pageCanvas.page{box-shadow:none; border-top:none;}
+  }
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div>
+    <h1>🗂️ Criador de Documentos</h1>
+    <div class="sub">posicionamento livre · fontes, cores, formas e listas multinível</div>
+  </div>
+  <div class="appbar-controls">
+    <button class="ghost small" id="btnUndo" title="Desfazer (Ctrl+Z)">↶ Desfazer</button>
+    <button class="ghost small" id="btnRedo" title="Refazer (Ctrl+Y)">↷ Refazer</button>
+    <span style="width:1px; height:20px; background:rgba(255,255,255,.3);"></span>
+    <select id="savedDocsSelect" title="Abrir um documento salvo automaticamente neste navegador. Use &quot;Salvar JSON&quot; para uma cópia permanente e portátil.">
+      <option value="">📂 Documentos salvos…</option>
+    </select>
+    <button class="ghost small" id="btnDeleteSavedDoc" title="Remover o documento selecionado da lista de salvos (não afeta arquivos JSON já exportados)">🗑</button>
+    <span id="autosaveStatus"></span>
+    <span style="width:1px; height:20px; background:rgba(255,255,255,.3);"></span>
+    <select id="pagesSelect" title="Trocar de página"></select>
+    <button class="ghost small" id="btnAddPage" title="Nova página">+ Página</button>
+    <button class="ghost small" id="btnDuplicatePage" title="Duplicar página atual">⧉</button>
+    <button class="ghost small" id="btnDeletePage" title="Excluir página atual">🗑 Página</button>
+    <span style="width:1px; height:20px; background:rgba(255,255,255,.3);"></span>
+    <button class="ghost" id="btnNewDoc">🆕 Novo</button>
+    <button class="ghost" id="btnExportJSON">💾 Salvar JSON</button>
+    <button class="ghost" id="btnImportJSON">📂 Abrir JSON</button>
+    <button class="ghost" id="btnExportPDF">🖨 PDF</button>
+    <button class="ghost" id="btnExportHTML">📄 HTML</button>
+  </div>
+</header>
+
+<div class="layout">
+  <div id="editorCol">
+
+    <!-- Documento -->
+    <div class="panel">
+      <div class="panel-head"><h2>Documento</h2><span class="chevron">›</span></div>
+      <div class="panel-body">
+        <div class="field">
+          <label>Título do documento</label>
+          <input type="text" id="docTitleInput" placeholder="ex: Roteiro de Aula" value="Documento sem título">
+        </div>
+        <div class="field">
+          <label>Tamanho da página</label>
+          <select id="pageSizeSelect">
+            <option value="continuous" selected>Contínua (cresce verticalmente)</option>
+            <option value="a4-portrait">A4 Retrato</option>
+            <option value="a4-landscape">A4 Paisagem</option>
+            <option value="letter-portrait">Carta Retrato</option>
+            <option value="letter-landscape">Carta Paisagem</option>
+          </select>
+        </div>
+        <div class="hint">No modo Contínua a página cresce sozinha conforme você adiciona conteúdo; uma quebra real só acontece quando você clica em "+ Nova página".</div>
+      </div>
+    </div>
+
+    <!-- Inserir Elementos -->
+    <div class="panel">
+      <div class="panel-head"><h2>Inserir Elementos</h2><span class="chevron">›</span></div>
+      <div class="panel-body">
+        <div class="field-inline" style="margin-bottom:10px; align-items:flex-start;">
+          <input type="checkbox" id="insertAfterSelected" style="margin-top:2px;">
+          <label for="insertAfterSelected" style="text-transform:none; font-weight:400; font-size:12px; color:var(--ink-soft);">Inserir logo após o elemento selecionado, empurrando o resto da página para baixo (útil para adicionar algo no meio de um documento já pronto)</label>
+        </div>
+        <div class="btn-grid">
+          <button data-insert="body">✏️ Texto</button>
+          <button data-insert="h1">H1 Título</button>
+          <button data-insert="h2">H2 Subtítulo</button>
+          <button data-insert="h3">H3 Seção</button>
+          <button data-insert="h4">H4 Subseção</button>
+          <button data-insert="bullet">• Lista</button>
+          <button data-insert="numbered">1. Lista</button>
+          <button data-insert="legenda">💬 Legenda</button>
+        </div>
+        <button id="btnInsertHeader" style="width:100%; margin-bottom:10px;">📌 Cabeçalho padrão</button>
+        <div class="shape-row">
+          <button class="tool-btn" data-shape="shape-line">〰 Linha</button>
+          <button class="tool-btn" data-shape="shape-rect">▭ Retângulo</button>
+          <button class="tool-btn" data-shape="shape-circle">◯ Círculo</button>
+        </div>
+        <div class="shape-row">
+          <button class="tool-btn" data-shape="shape-arrow">➡ Seta</button>
+          <button class="tool-btn" data-shape="shape-brace">{ Chave</button>
+          <button class="tool-btn" data-shape="shape-cycle">↻ Cíclica</button>
+        </div>
+        <button id="btnInsertFrame" style="width:100%; margin-bottom:6px;">🖼️ Quadro/Slide (16:9)</button>
+        <button id="btnInsertFrameImage" style="width:100%; margin-bottom:10px;">🖼️➕ Quadro/Slide (16:9) com imagem</button>
+        <div class="drop-zone" id="dropZoneImg">
+          <div class="icon">🖼️</div>
+          <p><strong>Arraste uma imagem aqui</strong></p>
+          <p style="margin-top:4px;">ou clique para selecionar</p>
+        </div>
+        <input type="file" id="fileInputImg" style="display:none;" accept="image/*" multiple>
+        <div class="field" style="margin-top:8px;">
+          <label>Link de imagem ou vídeo (YouTube/Vimeo)</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="urlInsertInput" placeholder="https://...">
+            <button class="small" id="btnInsertFromUrl">Inserir</button>
+          </div>
+          <div class="hint">Imagens por link não são baixadas/incorporadas — ficam referenciando o endereço original. Links do YouTube ou Vimeo viram um player incorporado.</div>
+        </div>
+        <div class="hint">Dica: cole (Ctrl+V) uma imagem ou texto copiado diretamente na página, ou arraste um arquivo de imagem para dentro dela. Com o texto em edição, use Tab / Shift+Tab para criar níveis de lista. Toda imagem inserida já ganha uma legenda editável logo abaixo.</div>
+      </div>
+    </div>
+
+    <!-- Propriedades -->
+    <div class="panel" id="panelProps">
+      <div class="panel-head"><h2>Propriedades</h2><span class="chevron">›</span></div>
+      <div class="panel-body">
+        <div class="props-empty" id="propsEmpty">Selecione um elemento na página para editar suas propriedades.</div>
+        <div id="propsBody" style="display:none;">
+
+          <div class="props-section" id="secText">
+            <h3>Texto</h3>
+            <div class="field">
+              <label>Fonte</label>
+              <select id="propFontFamily">
+                <option value="'Inter', system-ui, sans-serif">Inter (corpo)</option>
+                <option value="'Source Serif 4', Georgia, serif">Source Serif 4 (título)</option>
+                <option value="'IBM Plex Mono', monospace">IBM Plex Mono</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="'Times New Roman', serif">Times New Roman</option>
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="Verdana, sans-serif">Verdana</option>
+                <option value="'Courier New', monospace">Courier New</option>
+              </select>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label>Tamanho (px)</label>
+                <input type="number" id="propFontSize" min="8" max="120" value="15">
+              </div>
+              <div class="field">
+                <label>Cor do texto</label>
+                <input type="color" id="propColor" value="#232a3a">
+              </div>
+            </div>
+            <div class="toggle-row">
+              <button id="btnBold" title="Negrito"><strong>B</strong></button>
+              <button id="btnItalic" title="Itálico"><em>I</em></button>
+              <button id="btnUnderline" title="Sublinhado" style="text-decoration:underline;">S</button>
+              <button id="btnLink" title="Transformar o texto selecionado em link">🔗</button>
+            </div>
+            <div class="hint" style="margin-top:-4px;">Para criar um link: clique duas vezes no texto para editar, selecione o trecho desejado e clique em 🔗.</div>
+            <div class="toggle-row">
+              <button class="align-btn" data-align="left" title="Esquerda">⯇</button>
+              <button class="align-btn" data-align="center" title="Centro">☰</button>
+              <button class="align-btn" data-align="right" title="Direita">⯈</button>
+              <button class="align-btn" data-align="justify" title="Justificado">▤</button>
+            </div>
+            <div class="controls-inline">
+              <label>Entrelinhas:</label>
+              <input type="range" id="propLineHeight" min="1" max="2.5" step="0.1" value="1.5">
+              <span id="propLineHeightValue">1.5</span>
+            </div>
+            <div class="field">
+              <label>Preenchimento interno (px)</label>
+              <input type="number" id="propPadding" min="0" max="80" value="8">
+            </div>
+          </div>
+
+          <div class="props-section" id="secImage">
+            <h3>Imagem / Vídeo</h3>
+            <div class="row2">
+              <div class="field">
+                <label>Largura (px)</label>
+                <input type="number" id="propImgWidth" min="10" value="320">
+              </div>
+              <div class="field">
+                <label>Altura (px)</label>
+                <input type="number" id="propImgHeight" min="10" value="200">
+              </div>
+            </div>
+            <div class="field-inline"><label><input type="checkbox" id="propLockAspect" checked> Manter proporção</label></div>
+          </div>
+
+          <div class="props-section" id="secShapeTransform">
+            <h3>Orientação</h3>
+            <div class="controls-inline">
+              <label>Rotação:</label>
+              <input type="range" id="propRotation" min="-180" max="180" step="1" value="0">
+              <span id="propRotationValue">0°</span>
+            </div>
+            <div class="toggle-row">
+              <button id="btnFlipH" title="Inverter horizontalmente">⇋ Inverter H</button>
+              <button id="btnFlipV" title="Inverter verticalmente">⇵ Inverter V</button>
+            </div>
+          </div>
+
+          <div class="props-section" id="secAppearance">
+            <h3>Aparência</h3>
+            <div class="color-row">
+              <input type="color" id="propBg" value="#ffffff">
+              <label>Cor de fundo</label>
+              <label class="field-inline" style="margin:0;"><input type="checkbox" id="propBgTransparent"> Transparente</label>
+            </div>
+            <div class="color-row">
+              <input type="color" id="propBorderColor" value="#0d4a8f">
+              <label>Cor da borda</label>
+            </div>
+            <div class="row2">
+              <div class="field">
+                <label>Espessura da borda</label>
+                <input type="number" id="propBorderWidth" min="0" max="30" value="0">
+              </div>
+              <div class="field">
+                <label>Arredondamento</label>
+                <input type="number" id="propBorderRadius" min="0" max="200" value="0">
+              </div>
+            </div>
+            <div class="controls-inline">
+              <label>Opacidade:</label>
+              <input type="range" id="propOpacity" min="10" max="100" value="100">
+              <span id="propOpacityValue">100%</span>
+            </div>
+            <div class="field-inline"><label><input type="checkbox" id="propShadow"> Sombra suave</label></div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Camadas -->
+    <div class="panel">
+      <div class="panel-head"><h2>Camadas</h2><span class="chevron">›</span></div>
+      <div class="panel-body">
+        <div class="btn-grid">
+          <button id="btnDuplicate">⧉ Duplicar</button>
+          <button id="btnDelete">🗑 Excluir</button>
+          <button id="btnFront">⬆ Trazer p/ frente</button>
+          <button id="btnBack">⬇ Enviar p/ trás</button>
+        </div>
+        <div class="hint">Atalhos: Delete/Backspace exclui · Ctrl+D duplica · Esc desmarca.</div>
+      </div>
+    </div>
+
+    <!-- Organização Automática -->
+    <div class="panel">
+      <div class="panel-head"><h2>Organização Automática</h2><span class="chevron">›</span></div>
+      <div class="panel-body">
+        <div class="hint">Reempilha textos e imagens desta página em uma única coluna alinhada, com espaçamento consistente, respeitando a ordem em que já estão de cima para baixo. Formas e linhas não são movidas. Dá para desfazer logo em seguida.</div>
+        <div class="btn-grid" style="margin-top:10px;">
+          <button id="btnAutoArrange">🧹 Organizar página</button>
+          <button id="btnUndoArrange" style="display:none;">↩ Desfazer</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="canvasCol">
+    <div class="canvas-toolbar">
+      <div class="zoom-controls">
+        <label>Zoom:</label>
+        <input type="range" id="zoomRange" min="40" max="150" step="5" value="90">
+        <span id="zoomValue">90%</span>
+      </div>
+      <div class="page-nav">
+        <button class="small" id="btnPrevPage">‹ Anterior</button>
+        <span id="pageIndicator">Página 1 de 1</span>
+        <button class="small" id="btnNextPage">Próxima ›</button>
+      </div>
+    </div>
+    <div class="canvas-scroll">
+      <div id="pageWrapper">
+        <div id="pageCanvas" class="page"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer-note">
+  <strong>Criador de Documentos</strong> — editor de documentos com posicionamento livre de texto, imagens e formas · exporta em PDF, HTML e JSON
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script>
+/* ==================== CONFIG ==================== */
+const PAGE_SIZES = {
+  'continuous':      {w:794,  h:null, label:'Contínua (cresce verticalmente)', format:'a4', orientation:'portrait', continuous:true},
+  'a4-portrait':     {w:794,  h:1123, label:'A4 Retrato',    format:'a4',     orientation:'portrait'},
+  'a4-landscape':    {w:1123, h:794,  label:'A4 Paisagem',   format:'a4',     orientation:'landscape'},
+  'letter-portrait': {w:816,  h:1056, label:'Carta Retrato', format:'letter', orientation:'portrait'},
+  'letter-landscape':{w:1056, h:816,  label:'Carta Paisagem',format:'letter', orientation:'landscape'}
+};
+const CONTINUOUS_MIN_H = 1123;
+
+/* ==================== ESTADO ==================== */
+function uid(){ return 'el' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function newPage(){ return { id: uid(), elements: [] }; }
+
+let currentPageIdx = 0;
+let selectedId = null;
+let editingId = null;
+let zoom = 0.9;
+let drawMode = null;
+let zCounter = 1;
+
+function defaultStyle(overrides={}){
+  return Object.assign({
+    fontFamily:"'Inter', system-ui, sans-serif",
+    fontSize:15, fontWeight:400, fontStyle:'normal', textDecoration:'none',
+    color:'#232a3a', textAlign:'left', lineHeight:1.5,
+    background:'transparent', borderColor:'#0d4a8f', borderWidth:0, borderRadius:0,
+    opacity:100, padding:8, shadow:false
+  }, overrides);
+}
+
+function createTextElement(x,y,content,styleOverrides={},w=320){
+  return { id:uid(), type:'text', x,y,w,h:null, z:zCounter++, content, style:defaultStyle(styleOverrides) };
+}
+function createImageElement(x,y,src,w,h){
+  return { id:uid(), type:'image', x,y,w,h,z:zCounter++, src, lockAspect:true,
+    style:defaultStyle({background:'transparent',borderWidth:0,borderRadius:0,opacity:100,shadow:false}) };
+}
+const SVG_SHAPE_TYPES = ['shape-arrow', 'shape-brace', 'shape-cycle'];
+const SHAPE_TYPES = ['shape-line', 'shape-rect', 'shape-circle', ...SVG_SHAPE_TYPES];
+function createShapeElement(type,x,y,w,h){
+  const isLineLike = type === 'shape-line' || SVG_SHAPE_TYPES.includes(type);
+  return { id:uid(), type, x,y,w,h,z:zCounter++, rotation:0, flipH:false, flipV:false,
+    style:defaultStyle({
+      background: isLineLike ? (type==='shape-line' ? '#0d4a8f' : 'transparent') : '#e8f0f7',
+      borderColor:'#0d4a8f',
+      borderWidth: type==='shape-line' ? 0 : (SVG_SHAPE_TYPES.includes(type) ? 3 : 2),
+      borderRadius: type==='shape-circle' ? 9999 : 4,
+      opacity:100, shadow:false
+    }) };
+}
+function createVideoElement(x,y,embedUrl,w,h){
+  return { id:uid(), type:'video', x,y,w,h,z:zCounter++, embedUrl, lockAspect:true,
+    style:defaultStyle({background:'#000000', borderWidth:0, borderRadius:8, opacity:100, shadow:true}) };
+}
+
+/* Formas em SVG (seta, chave, seta cíclica) — desenhadas por fórmula a
+   partir de w/h/cor/espessura, então redesenham nitidamente em qualquer
+   tamanho (ver refreshElementVisual e o fim de startResize/startDrawShape). */
+function polarPoint(cx, cy, r, angleDeg){
+  const a = (angleDeg - 90) * Math.PI / 180;
+  return { x: cx + r*Math.cos(a), y: cy + r*Math.sin(a) };
+}
+function describeArc(cx, cy, r, startAngle, endAngle){
+  const start = polarPoint(cx, cy, r, endAngle);
+  const end = polarPoint(cx, cy, r, startAngle);
+  const largeArcFlag = (endAngle - startAngle) <= 180 ? '0' : '1';
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
+}
+function arrowheadAt(cx, cy, r, angleDeg, stroke, size){
+  const tip = polarPoint(cx, cy, r, angleDeg + size*1.3);
+  const base1 = polarPoint(cx, cy, r + size*0.8, angleDeg - size*0.4);
+  const base2 = polarPoint(cx, cy, r - size*0.8, angleDeg - size*0.4);
+  return `<polygon points="${tip.x},${tip.y} ${base1.x},${base1.y} ${base2.x},${base2.y}" fill="${stroke}"/>`;
+}
+function bracePoints(w, h){
+  const pts = [[1,0], [0.4,0], [0.4,0.45], [0,0.5], [0.4,0.55], [0.4,1], [1,1]];
+  return pts.map(([px,py])=>`${px*w},${py*h}`).join(' ');
+}
+function svgForShape(el){
+  const w = Math.max(4, el.w), h = Math.max(4, el.h);
+  const stroke = el.style.borderColor || '#0d4a8f';
+  const strokeWidth = Math.max(2, el.style.borderWidth || 3);
+
+  if(el.type === 'shape-arrow'){
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" style="display:block; overflow:visible;">
+      <line x1="${w*0.08}" y1="${h/2}" x2="${w*0.78}" y2="${h/2}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round"/>
+      <polygon points="${w*0.68},${h*0.22} ${w*0.95},${h/2} ${w*0.68},${h*0.78}" fill="${stroke}"/>
+    </svg>`;
+  }
+  if(el.type === 'shape-brace'){
+    const pts = bracePoints(w, h);
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" style="display:block; overflow:visible;">
+      <polyline points="${pts}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+  }
+  if(el.type === 'shape-cycle'){
+    const cx = w/2, cy = h/2;
+    const r = Math.max(6, Math.min(w,h)/2 - strokeWidth*2 - 4);
+    const headSize = Math.max(6, strokeWidth*2.2);
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="100%" style="display:block; overflow:visible;">
+      <path d="${describeArc(cx,cy,r,20,160)}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round"/>
+      <path d="${describeArc(cx,cy,r,200,340)}" fill="none" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round"/>
+      ${arrowheadAt(cx,cy,r,160,stroke,headSize)}
+      ${arrowheadAt(cx,cy,r,340,stroke,headSize)}
+    </svg>`;
+  }
+  return '';
+}
+
+/* Cabeçalho padrão: Prof. Walderez Ramalho (UDESC) | data atual — inserido
+   automaticamente em todo documento novo, e disponível como botão avulso. */
+function getDefaultHeaderText(){
+  const d = new Date();
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yyyy = d.getFullYear();
+  return `Prof. Walderez Ramalho (UDESC)  |  ${dd}/${mm}/${yyyy}`;
+}
+function createDefaultHeaderElement(){
+  return createTextElement(40, 28, escapeHtml(getDefaultHeaderText()),
+    {fontFamily:"'IBM Plex Mono', monospace", fontSize:11, fontWeight:500, color:'#445070'}, 480);
+}
+function newPageWithHeader(){
+  return { id: uid(), elements: [ createDefaultHeaderElement() ] };
+}
+
+let doc = { id: uid(), title: 'Documento sem título', pageSizeKey: 'continuous', pages: [ newPageWithHeader() ] };
+
+function currentPage(){ return doc.pages[currentPageIdx]; }
+function getEl(id){ return currentPage().elements.find(e=>e.id===id); }
+function pageEl(){ return document.getElementById('pageCanvas'); }
+
+function escapeHtml(text){
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
+}
+function isFormFieldFocused(){
+  const a = document.activeElement;
+  return a && (a.tagName==='INPUT' || a.tagName==='TEXTAREA' || a.tagName==='SELECT');
+}
+
+/* ==================== RENDER ====================
+   Cada elemento é um nó "caixa" (posição, fundo, borda, sombra) que NUNCA é
+   contenteditable. Para texto, um nó filho ".el-text-inner" (100% da caixa)
+   é que recebe contenteditable — assim os handles de redimensionamento
+   (irmãos do conteúdo, filhos da caixa) nunca ficam misturados ao HTML
+   editável nem são salvos dentro do conteúdo do usuário. */
+function applyBoxStyle(node, el){
+  const s = el.style;
+  const isSvgShape = SVG_SHAPE_TYPES.includes(el.type);
+  node.style.background = isSvgShape ? 'transparent' : (s.background === 'transparent' ? 'transparent' : s.background);
+  node.style.borderStyle = (!isSvgShape && s.borderWidth > 0) ? 'solid' : 'none';
+  node.style.borderColor = s.borderColor;
+  node.style.borderWidth = (isSvgShape ? 0 : s.borderWidth)+'px';
+  node.style.borderRadius = s.borderRadius+'px';
+  node.style.opacity = (s.opacity/100);
+  node.style.boxShadow = s.shadow ? '0 6px 18px rgba(13,74,143,.25)' : 'none';
+  node.style.boxSizing = 'border-box';
+  node.style.cursor = 'move';
+  node.style.userSelect = 'none';
+  if(SHAPE_TYPES.includes(el.type)){
+    const rot = el.rotation || 0;
+    const sx = el.flipH ? -1 : 1;
+    const sy = el.flipV ? -1 : 1;
+    node.style.transform = `rotate(${rot}deg) scaleX(${sx}) scaleY(${sy})`;
+    node.style.transformOrigin = 'center';
+  } else {
+    node.style.transform = '';
+  }
+}
+function applyTextStyle(content, s){
+  content.style.fontFamily = s.fontFamily;
+  content.style.fontSize = s.fontSize+'px';
+  content.style.fontWeight = s.fontWeight;
+  content.style.fontStyle = s.fontStyle;
+  content.style.textDecoration = s.textDecoration;
+  content.style.color = s.color;
+  content.style.textAlign = s.textAlign;
+  content.style.lineHeight = s.lineHeight;
+  content.style.padding = (s.padding||0)+'px';
+  content.style.boxSizing = 'border-box';
+  content.style.outline = 'none';
+  content.style.width = '100%';
+  content.style.minHeight = '1em';
+}
+function refreshElementVisual(id){
+  const el = getEl(id);
+  const node = pageEl().querySelector(`[data-id="${id}"]`);
+  if(!el || !node) return;
+  applyBoxStyle(node, el);
+  if(el.type === 'text'){
+    const content = node.querySelector('.el-text-inner');
+    if(content) applyTextStyle(content, el.style);
+  } else if(SVG_SHAPE_TYPES.includes(el.type)){
+    const wrap = node.querySelector('.el-svg-shape');
+    if(wrap) wrap.innerHTML = svgForShape(el);
+  }
+}
+
+function createElementNode(el){
+  const node = document.createElement('div');
+  node.className = 'el-body el-' + el.type;
+  node.dataset.id = el.id;
+  node.style.position = 'absolute';
+  node.style.left = el.x+'px';
+  node.style.top = el.y+'px';
+  node.style.width = el.w+'px';
+  if(el.type !== 'text') node.style.height = el.h+'px';
+  node.style.zIndex = el.z;
+  applyBoxStyle(node, el);
+
+  if(el.type === 'text'){
+    const content = document.createElement('div');
+    content.className = 'el-text-inner';
+    content.contentEditable = 'false';
+    applyTextStyle(content, el.style);
+    content.innerHTML = el.content;
+    content.addEventListener('dblclick', ()=>enterEditMode(el.id));
+    content.addEventListener('blur', ()=>exitEditMode(el.id));
+    content.addEventListener('keydown', (e)=>onTextKeyDown(e, el.id));
+    node.appendChild(content);
+  } else if(el.type === 'image'){
+    const img = document.createElement('img');
+    img.src = el.src;
+    img.draggable = false;
+    img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'fill';
+    img.style.display = 'block'; img.style.borderRadius = 'inherit'; img.style.pointerEvents='none';
+    node.appendChild(img);
+  } else if(el.type === 'video'){
+    const iframe = document.createElement('iframe');
+    iframe.src = el.embedUrl;
+    iframe.style.width = '100%'; iframe.style.height = '100%'; iframe.style.border = 'none';
+    iframe.style.borderRadius = 'inherit'; iframe.style.pointerEvents = 'none';
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+    node.appendChild(iframe);
+  } else if(SVG_SHAPE_TYPES.includes(el.type)){
+    const wrap = document.createElement('div');
+    wrap.className = 'el-svg-shape';
+    wrap.style.width = '100%'; wrap.style.height = '100%'; wrap.style.pointerEvents = 'none';
+    wrap.innerHTML = svgForShape(el);
+    node.appendChild(wrap);
+  }
+
+  const handles = el.type === 'text' ? ['w','e'] : ['nw','ne','sw','se'];
+  handles.forEach(corner=>{
+    const h = document.createElement('div');
+    h.className = 'rh rh-' + corner;
+    h.addEventListener('mousedown', (e)=>startResize(e, el.id, corner));
+    node.appendChild(h);
+  });
+
+  node.addEventListener('mousedown', (e)=>onElementMouseDown(e, el.id));
+  return node;
+}
+
+function renderPage(){
+  const sizeCfg = PAGE_SIZES[doc.pageSizeKey];
+  const canvas = pageEl();
+  canvas.style.width = sizeCfg.w+'px';
+  canvas.style.height = sizeCfg.continuous ? CONTINUOUS_MIN_H+'px' : sizeCfg.h+'px';
+  canvas.innerHTML = '';
+  currentPage().elements.forEach(el=>canvas.appendChild(createElementNode(el)));
+  if(sizeCfg.continuous) adjustContinuousHeight();
+  updatePagesPanel();
+  updatePropsPanel();
+  setupPageObserver();
+}
+
+/* Página "contínua": a altura acompanha o conteúdo real renderizado (sem
+   quebra de página), crescendo automaticamente conforme elementos são
+   adicionados, movidos, redimensionados ou o texto é digitado. */
+function adjustContinuousHeight(){
+  const sizeCfg = PAGE_SIZES[doc.pageSizeKey];
+  if(!sizeCfg.continuous) return;
+  const canvas = pageEl();
+  let maxBottom = 0;
+  Array.from(canvas.children).forEach(node=>{
+    if(!node.dataset || !node.dataset.id) return;
+    const bottom = node.offsetTop + node.offsetHeight;
+    if(bottom > maxBottom) maxBottom = bottom;
+  });
+  canvas.style.height = Math.max(CONTINUOUS_MIN_H, maxBottom + 80) + 'px';
+}
+
+/* Observa mudanças estruturais/de estilo/texto na página ativa para: (1)
+   recalcular a altura da página contínua, (2) agendar o autosave local e
+   (3) agendar um snapshot de desfazer/refazer — cobre drag, resize e
+   edição de texto sem precisar instrumentar cada ponto de mutação
+   manualmente. */
+let pageObserver = null;
+function setupPageObserver(){
+  if(pageObserver) pageObserver.disconnect();
+  pageObserver = new MutationObserver(()=>{
+    requestAnimationFrame(adjustContinuousHeight);
+    scheduleAutosave();
+    scheduleHistorySnapshot();
+  });
+  pageObserver.observe(pageEl(), {childList:true, subtree:true, attributes:true, attributeFilter:['style'], characterData:true});
+}
+
+/* ==================== SELEÇÃO / EDIÇÃO ==================== */
+function selectElement(id){
+  if(selectedId && selectedId !== id){
+    const prev = pageEl().querySelector(`[data-id="${selectedId}"]`);
+    if(prev) prev.classList.remove('selected');
+  }
+  selectedId = id;
+  const node = pageEl().querySelector(`[data-id="${id}"]`);
+  if(node) node.classList.add('selected');
+  updatePropsPanel();
+}
+function deselectAll(){
+  if(editingId) exitEditMode(editingId);
+  if(selectedId){
+    const node = pageEl().querySelector(`[data-id="${selectedId}"]`);
+    if(node) node.classList.remove('selected');
+  }
+  selectedId = null;
+  updatePropsPanel();
+}
+function enterEditMode(id){
+  if(drawMode) return;
+  const el = getEl(id);
+  if(!el || el.type !== 'text') return;
+  if(editingId && editingId !== id) exitEditMode(editingId);
+  editingId = id;
+  const outer = pageEl().querySelector(`[data-id="${id}"]`);
+  const content = outer && outer.querySelector('.el-text-inner');
+  if(!content) return;
+  content.contentEditable = 'true';
+  content.style.cursor = 'text';
+  content.style.userSelect = 'text';
+  content.focus();
+}
+function exitEditMode(id){
+  const outer = pageEl().querySelector(`[data-id="${id}"]`);
+  const content = outer && outer.querySelector('.el-text-inner');
+  const el = getEl(id);
+  if(content){
+    if(el) el.content = content.innerHTML;
+    content.contentEditable = 'false';
+    content.style.cursor = 'text';
+    content.style.userSelect = 'none';
+  }
+  if(editingId === id) editingId = null;
+}
+function onTextKeyDown(e, id){
+  if(e.key === 'Tab'){
+    e.preventDefault();
+    if(e.shiftKey) document.execCommand('outdent'); else document.execCommand('indent');
+  }
+}
+
+/* ==================== DRAG / RESIZE ==================== */
+function onElementMouseDown(e, id){
+  e.stopPropagation();
+  if(drawMode) return;
+  const el = getEl(id);
+  selectElement(id);
+  if(editingId === id) return;
+
+  const startX = e.clientX, startY = e.clientY;
+  const origX = el.x, origY = el.y;
+  function onMove(ev){
+    const dx = (ev.clientX - startX)/zoom, dy = (ev.clientY - startY)/zoom;
+    el.x = Math.max(0, origX + dx);
+    el.y = Math.max(0, origY + dy);
+    const node = pageEl().querySelector(`[data-id="${id}"]`);
+    if(node){ node.style.left = el.x+'px'; node.style.top = el.y+'px'; }
+  }
+  function onUp(){
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+function startResize(e, id, corner){
+  e.stopPropagation(); e.preventDefault();
+  const el = getEl(id);
+  const startX = e.clientX, startY = e.clientY;
+  const orig = { x:el.x, y:el.y, w:el.w, h:el.h };
+  const aspect = ((el.type === 'image' || el.type === 'video') && el.lockAspect && orig.h) ? orig.w/orig.h : null;
+
+  function onMove(ev){
+    const dx = (ev.clientX - startX)/zoom, dy = (ev.clientY - startY)/zoom;
+    let w = orig.w, h = orig.h, x = orig.x, y = orig.y;
+    if(corner.includes('e')) w = Math.max(30, orig.w + dx);
+    if(corner.includes('s')) h = Math.max(20, orig.h + dy);
+    if(corner.includes('w')){ w = Math.max(30, orig.w - dx); x = orig.x + (orig.w - w); }
+    if(corner.includes('n')){ h = Math.max(20, orig.h - dy); y = orig.y + (orig.h - h); }
+    if(aspect){ h = w/aspect; if(corner.includes('n')) y = orig.y + orig.h - h; }
+    el.w = w; if(el.type !== 'text') el.h = h;
+    el.x = x; el.y = y;
+    const node = pageEl().querySelector(`[data-id="${id}"]`);
+    if(node){
+      node.style.width = w+'px';
+      if(el.type !== 'text') node.style.height = h+'px';
+      node.style.left = x+'px';
+      node.style.top = y+'px';
+    }
+    if(el.type === 'image' || el.type === 'video'){
+      document.getElementById('propImgWidth').value = Math.round(el.w);
+      document.getElementById('propImgHeight').value = Math.round(el.h);
+    }
+  }
+  function onUp(){
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    if(SVG_SHAPE_TYPES.includes(el.type)) refreshElementVisual(id);
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+/* ==================== FORMAS (DESENHO) ==================== */
+function setDrawMode(type){
+  drawMode = (drawMode === type) ? null : type;
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.toggle('active', b.dataset.shape === drawMode));
+  pageEl().style.cursor = drawMode ? 'crosshair' : 'default';
+}
+function startDrawShape(e){
+  const rect = pageEl().getBoundingClientRect();
+  const startX = (e.clientX - rect.left)/zoom, startY = (e.clientY - rect.top)/zoom;
+  const type = drawMode;
+  const tempEl = createShapeElement(type, startX, startY, 4, type==='shape-line' ? 4 : 4);
+  currentPage().elements.push(tempEl);
+  const node = createElementNode(tempEl);
+  pageEl().appendChild(node);
+
+  function onMove(ev){
+    const x = (ev.clientX - rect.left)/zoom, y = (ev.clientY - rect.top)/zoom;
+    let w, h;
+    if(type === 'shape-line'){ w = Math.max(20, x - startX); h = 4; }
+    else { w = Math.max(4, x - startX); h = Math.max(4, y - startY); }
+    tempEl.w = w; tempEl.h = h;
+    node.style.width = w+'px'; node.style.height = h+'px';
+  }
+  function onUp(){
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    if(tempEl.w < 8 && tempEl.h < 8){
+      const defaultSizes = {
+        'shape-line':[200,4], 'shape-arrow':[160,50], 'shape-brace':[40,160], 'shape-cycle':[90,90]
+      };
+      const [dw,dh] = defaultSizes[type] || [150,100];
+      tempEl.w = dw; tempEl.h = dh;
+      node.style.width = dw+'px'; node.style.height = dh+'px';
+    }
+    if(SVG_SHAPE_TYPES.includes(type)) refreshElementVisual(tempEl.id);
+    selectElement(tempEl.id);
+    drawMode = null;
+    document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+    pageEl().style.cursor = 'default';
+  }
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+}
+
+pageEl().addEventListener('mousedown', (e)=>{
+  if(e.target !== pageEl()) return;
+  if(drawMode){ startDrawShape(e); return; }
+  deselectAll();
+});
+
+/* ==================== INSERIR TEXTO ==================== */
+/* Todo elemento inserido por botão (texto, título, lista, cabeçalho, imagem
+   via upload/colar) nasce logo abaixo do último elemento existente na
+   página — nunca sobrepondo o que já foi feito — e a página contínua cresce
+   sozinha para acomodá-lo (via adjustContinuousHeight/observer). */
+function nextInsertY(){
+  const canvas = pageEl();
+  let maxBottom = 0;
+  Array.from(canvas.children).forEach(node=>{
+    if(!node.dataset || !node.dataset.id) return;
+    const bottom = node.offsetTop + node.offsetHeight;
+    if(bottom > maxBottom) maxBottom = bottom;
+  });
+  return maxBottom === 0 ? 40 : maxBottom + 30;
+}
+let insertAfterSelected = false;
+document.getElementById('insertAfterSelected').addEventListener('change', e=>{
+  insertAfterSelected = e.target.checked;
+});
+function bottomInsertPos(w){
+  const sizeCfg = PAGE_SIZES[doc.pageSizeKey];
+  const x = Math.max(20, (sizeCfg.w - w)/2);
+  if(insertAfterSelected && selectedId){
+    const node = pageEl().querySelector(`[data-id="${selectedId}"]`);
+    if(node) return { x, y: node.offsetTop + node.offsetHeight + 24 };
+  }
+  return { x, y: nextInsertY() };
+}
+/* Coloca um grupo de elementos recém-criados na página e, se insertY for
+   informado, empurra para baixo tudo que já estava naquela altura (ou
+   abaixo) — usado tanto para inserções simples quanto para "templates" com
+   vários elementos (ex: quadro/slide). Quando insertY é null, os elementos
+   só são posicionados (uso para posições manuais, como soltar um arquivo
+   arrastado num ponto específico) e nada é empurrado. */
+function placeGroupAndPush(elements, insertY){
+  elements.forEach(el=>{
+    currentPage().elements.push(el);
+    pageEl().appendChild(createElementNode(el));
+  });
+  if(insertY != null){
+    let maxBottom = 0;
+    elements.forEach(el=>{
+      const node = pageEl().querySelector(`[data-id="${el.id}"]`);
+      const h = el.type === 'text' ? node.offsetHeight : el.h;
+      const bottom = el.y + h;
+      if(bottom > maxBottom) maxBottom = bottom;
+    });
+    const shiftAmount = (maxBottom - insertY) + 24;
+    const newIds = new Set(elements.map(e=>e.id));
+    currentPage().elements.forEach(other=>{
+      if(newIds.has(other.id)) return;
+      if(other.y >= insertY - 0.5){
+        other.y += shiftAmount;
+        const n = pageEl().querySelector(`[data-id="${other.id}"]`);
+        if(n) n.style.top = other.y+'px';
+      }
+    });
+  }
+  selectElement(elements[0].id);
+}
+const TEXT_PRESETS = {
+  body:     {w:320, content:'Digite seu texto aqui...', style:{fontFamily:"'Inter', system-ui, sans-serif", fontSize:15, fontWeight:400, color:'#232a3a'}},
+  h1:       {w:500, content:'Título Principal', style:{fontFamily:"'Source Serif 4', Georgia, serif", fontSize:32, fontWeight:700, color:'#0d4a8f'}},
+  h2:       {w:460, content:'Subtítulo', style:{fontFamily:"'Source Serif 4', Georgia, serif", fontSize:24, fontWeight:700, color:'#1d6fa5'}},
+  h3:       {w:420, content:'Seção', style:{fontFamily:"'Source Serif 4', Georgia, serif", fontSize:19, fontWeight:600, color:'#2d7d4f'}},
+  h4:       {w:380, content:'Subseção', style:{fontFamily:"'Source Serif 4', Georgia, serif", fontSize:16, fontWeight:600, color:'#2d7d4f'}},
+  bullet:   {w:340, content:'<ul><li>Item um</li><li>Item dois</li></ul>', style:{fontFamily:"'Inter', system-ui, sans-serif", fontSize:15, fontWeight:400, color:'#232a3a'}},
+  numbered: {w:340, content:'<ol><li>Item um</li><li>Item dois</li></ol>', style:{fontFamily:"'Inter', system-ui, sans-serif", fontSize:15, fontWeight:400, color:'#232a3a'}},
+  legenda:  {w:280, content:'Legenda da imagem', style:{fontFamily:"'Inter', system-ui, sans-serif", fontSize:12, fontStyle:'italic', fontWeight:400, color:'#445070', textAlign:'center'}}
+};
+function addTextElement(kind){
+  const p = TEXT_PRESETS[kind];
+  const pos = bottomInsertPos(p.w);
+  const el = createTextElement(pos.x, pos.y, p.content, p.style, p.w);
+  placeGroupAndPush([el], pos.y);
+}
+document.querySelectorAll('[data-insert]').forEach(btn=>{
+  btn.addEventListener('click', ()=>addTextElement(btn.dataset.insert));
+});
+document.getElementById('btnInsertHeader').addEventListener('click', ()=>{
+  const el = createDefaultHeaderElement();
+  const pos = bottomInsertPos(el.w);
+  el.x = pos.x; el.y = pos.y;
+  placeGroupAndPush([el], pos.y);
+});
+document.querySelectorAll('.tool-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>setDrawMode(btn.dataset.shape));
+});
+
+/* ==================== IMAGENS ==================== */
+function compressImage(dataUrl, cb, maxDim=1400){
+  const img = new Image();
+  img.onload = ()=>{
+    let w = img.width, h = img.height;
+    const origW = w, origH = h;
+    if(w > maxDim){ h = h*maxDim/w; w = maxDim; }
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(img,0,0,w,h);
+    canvas.toBlob(blob=>{
+      const r = new FileReader();
+      r.onload = ev=>cb(ev.target.result, origW, origH);
+      r.readAsDataURL(blob);
+    }, 'image/jpeg', 0.85);
+  };
+  img.src = dataUrl;
+}
+/* Toda imagem inserida ganha uma legenda vinculada (el.captionFor aponta
+   para o id da imagem) logo abaixo — excluir ou duplicar a imagem também
+   remove/duplica a legenda junto (ver deleteElement/duplicateElement). */
+function createCaptionForImage(imageEl){
+  const cap = createTextElement(imageEl.x, imageEl.y + imageEl.h + 6, escapeHtml('Legenda da imagem'),
+    {fontFamily:"'Inter', system-ui, sans-serif", fontSize:12, fontStyle:'italic', fontWeight:400, color:'#445070', textAlign:'center'},
+    imageEl.w);
+  cap.captionFor = imageEl.id;
+  return cap;
+}
+function insertImageFromFile(file, dropX, dropY){
+  if(!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    compressImage(e.target.result, (dataUrl, w, h)=>{
+      const maxW = 320;
+      let finalW = w, finalH = h;
+      if(finalW > maxW){ finalH = finalH*maxW/finalW; finalW = maxW; }
+      if(dropX != null){
+        const pos = {x:dropX-finalW/2, y:dropY-finalH/2};
+        const el = createImageElement(Math.max(0,pos.x), Math.max(0,pos.y), dataUrl, finalW, finalH);
+        placeGroupAndPush([el, createCaptionForImage(el)], null);
+      } else {
+        const pos = bottomInsertPos(finalW);
+        const el = createImageElement(pos.x, pos.y, dataUrl, finalW, finalH);
+        placeGroupAndPush([el, createCaptionForImage(el)], pos.y);
+      }
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+const dropZoneImg = document.getElementById('dropZoneImg');
+const fileInputImg = document.getElementById('fileInputImg');
+dropZoneImg.addEventListener('click', ()=>fileInputImg.click());
+['dragenter','dragover','dragleave','drop'].forEach(ev=>{
+  dropZoneImg.addEventListener(ev, e=>{ e.preventDefault(); e.stopPropagation(); });
+});
+['dragenter','dragover'].forEach(ev=>dropZoneImg.addEventListener(ev, ()=>dropZoneImg.classList.add('active')));
+['dragleave','drop'].forEach(ev=>dropZoneImg.addEventListener(ev, ()=>dropZoneImg.classList.remove('active')));
+dropZoneImg.addEventListener('drop', e=>{
+  Array.from(e.dataTransfer.files).forEach(f=>insertImageFromFile(f));
+});
+fileInputImg.addEventListener('change', e=>{
+  Array.from(e.target.files).forEach(f=>insertImageFromFile(f));
+  fileInputImg.value = '';
+});
+
+/* Quadro/Slide: um retângulo grande em proporção 16:9, já com título, linha
+   divisória e área de bullets prontos — pode ser reposicionado livremente. */
+function createFrameBase(fx, fy, w, h){
+  const frame = createShapeElement('shape-rect', fx, fy, w, h);
+  frame.style.background = '#ffffff';
+  frame.style.borderColor = '#0d4a8f';
+  frame.style.borderWidth = 2;
+  frame.style.borderRadius = 14;
+  frame.style.shadow = true;
+  return frame;
+}
+function addFrameElement(){
+  const w = 640, h = 360, pad = 32;
+  const pos = bottomInsertPos(w);
+  const fx = pos.x, fy = pos.y;
+  const innerW = w - pad*2;
+
+  const frame = createFrameBase(fx, fy, w, h);
+  const title = createTextElement(fx+pad, fy+22, 'Título do Slide',
+    {fontFamily:"'Source Serif 4', Georgia, serif", fontSize:24, fontWeight:700, color:'#0d4a8f'}, innerW);
+  const divider = createShapeElement('shape-line', fx+pad, fy+68, innerW, 3);
+  divider.style.background = '#2d7d4f';
+  const body = createTextElement(fx+pad, fy+90,
+    '<ul><li>Ponto um</li><li>Ponto dois</li><li>Ponto três</li></ul>',
+    {fontFamily:"'Inter', system-ui, sans-serif", fontSize:15, fontWeight:400, color:'#232a3a'}, innerW);
+
+  placeGroupAndPush([frame, title, divider, body], pos.y);
+}
+document.getElementById('btnInsertFrame').addEventListener('click', addFrameElement);
+
+function addFrameWithImageElement(){
+  const w = 640, h = 360, pad = 28;
+  const pos = bottomInsertPos(w);
+  const fx = pos.x, fy = pos.y;
+  const innerW = w - pad*2;
+
+  const frame = createFrameBase(fx, fy, w, h);
+  const title = createTextElement(fx+pad, fy+20, 'Título do Slide',
+    {fontFamily:"'Source Serif 4', Georgia, serif", fontSize:22, fontWeight:700, color:'#0d4a8f'}, innerW);
+  const divider = createShapeElement('shape-line', fx+pad, fy+60, innerW, 3);
+  divider.style.background = '#2d7d4f';
+
+  // metade esquerda: espaço reservado para imagem + legenda; direita: bullets
+  const colGap = 20;
+  const colW = (innerW - colGap)/2;
+  const imgTop = fy+80;
+  const imgH = 190;
+
+  const imgPlaceholder = createShapeElement('shape-rect', fx+pad, imgTop, colW, imgH);
+  imgPlaceholder.style.background = '#f1ede4';
+  imgPlaceholder.style.borderColor = '#dcd5c6';
+  imgPlaceholder.style.borderWidth = 2;
+  imgPlaceholder.style.borderRadius = 8;
+
+  const hint = createTextElement(fx+pad, imgTop+imgH/2-10, '🖼️ Arraste ou cole sua imagem aqui',
+    {fontFamily:"'Inter', system-ui, sans-serif", fontSize:12, fontWeight:400, color:'#8a93a8', textAlign:'center'}, colW);
+
+  const caption = createTextElement(fx+pad, imgTop+imgH+6, 'Legenda da imagem',
+    {fontFamily:"'Inter', system-ui, sans-serif", fontSize:12, fontStyle:'italic', fontWeight:400, color:'#445070', textAlign:'center'}, colW);
+
+  const bulletsX = fx+pad+colW+colGap;
+  const bullets = createTextElement(bulletsX, imgTop,
+    '<ul><li>Ponto um</li><li>Ponto dois</li><li>Ponto três</li></ul>',
+    {fontFamily:"'Inter', system-ui, sans-serif", fontSize:15, fontWeight:400, color:'#232a3a'}, colW);
+
+  placeGroupAndPush([frame, title, divider, imgPlaceholder, hint, caption, bullets], pos.y);
+}
+document.getElementById('btnInsertFrameImage').addEventListener('click', addFrameWithImageElement);
+
+/* Imagem por link: referencia a URL diretamente (sem baixar/incorporar).
+   Vídeo (YouTube/Vimeo): vira um player incorporado (iframe). */
+function insertImageFromUrl(url){
+  const img = new Image();
+  img.onload = ()=>{
+    const maxW = 320;
+    let w = img.naturalWidth || 320, h = img.naturalHeight || 200;
+    if(w > maxW){ h = h*maxW/w; w = maxW; }
+    const pos = bottomInsertPos(w);
+    const el = createImageElement(pos.x, pos.y, url, w, h);
+    placeGroupAndPush([el, createCaptionForImage(el)], pos.y);
+  };
+  img.onerror = ()=>{
+    alert('Não foi possível carregar a imagem desse link. Verifique o endereço ou baixe o arquivo e arraste/cole na página.');
+  };
+  img.src = url;
+}
+function parseYouTubeId(url){
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]{11})/);
+  return m ? m[1] : null;
+}
+function parseVimeoId(url){
+  const m = url.match(/vimeo\.com\/(?:.*\/)?(\d+)/);
+  return m ? m[1] : null;
+}
+function insertFromUrl(url){
+  const ytId = parseYouTubeId(url);
+  const vimeoId = !ytId && parseVimeoId(url);
+  if(ytId || vimeoId){
+    const w = 480, h = 270;
+    const pos = bottomInsertPos(w);
+    const embedUrl = ytId ? `https://www.youtube.com/embed/${ytId}` : `https://player.vimeo.com/video/${vimeoId}`;
+    const el = createVideoElement(pos.x, pos.y, embedUrl, w, h);
+    placeGroupAndPush([el], pos.y);
+    return;
+  }
+  insertImageFromUrl(url);
+}
+function submitUrlInsert(){
+  const input = document.getElementById('urlInsertInput');
+  const url = input.value.trim();
+  if(!url) return;
+  if(!/^https?:\/\//i.test(url)){ alert('Use um link começando com http:// ou https://'); return; }
+  insertFromUrl(url);
+  input.value = '';
+}
+document.getElementById('btnInsertFromUrl').addEventListener('click', submitUrlInsert);
+document.getElementById('urlInsertInput').addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){ e.preventDefault(); submitUrlInsert(); }
+});
+
+pageEl().addEventListener('dragover', e=>e.preventDefault());
+pageEl().addEventListener('drop', e=>{
+  e.preventDefault();
+  const rect = pageEl().getBoundingClientRect();
+  const x = (e.clientX - rect.left)/zoom, y = (e.clientY - rect.top)/zoom;
+  if(e.dataTransfer.files && e.dataTransfer.files.length){
+    Array.from(e.dataTransfer.files).forEach(f=>insertImageFromFile(f, x, y));
+  } else {
+    const text = e.dataTransfer.getData('text/plain');
+    if(text){
+      const el = createTextElement(Math.max(0,x-100), Math.max(0,y-20), escapeHtml(text).replace(/\n/g,'<br>'), {}, 260);
+      currentPage().elements.push(el);
+      pageEl().appendChild(createElementNode(el));
+      selectElement(el.id);
+    }
+  }
+});
+
+document.addEventListener('paste', e=>{
+  const items = e.clipboardData && e.clipboardData.items;
+  if(!items) return;
+  let hasImage = false;
+  for(const item of items){
+    if(item.type.startsWith('image/')){
+      hasImage = true;
+      const file = item.getAsFile();
+      e.preventDefault();
+      insertImageFromFile(file);
+    }
+  }
+  if(hasImage || isFormFieldFocused()) return;
+
+  const text = e.clipboardData.getData('text/plain');
+  if(!text) return;
+  e.preventDefault();
+  if(editingId){
+    // sempre cola apenas o conteúdo puro, ignorando a formatação de origem
+    // (fonte/cor/negrito etc. do texto colado seguem o estilo da caixa atual)
+    document.execCommand('insertText', false, text);
+  } else {
+    const pos = bottomInsertPos(320);
+    const el = createTextElement(pos.x, pos.y, escapeHtml(text).replace(/\n/g,'<br>'), {}, 320);
+    currentPage().elements.push(el);
+    pageEl().appendChild(createElementNode(el));
+    selectElement(el.id);
+  }
+});
+
+/* ==================== TECLADO ==================== */
+document.addEventListener('keydown', e=>{
+  if(isFormFieldFocused()) return;
+  if(editingId) return;
+  if((e.key === 'Delete' || e.key === 'Backspace') && selectedId){
+    e.preventDefault();
+    deleteElement(selectedId);
+  }
+  if(e.key === 'Escape') deselectAll();
+  if(e.ctrlKey && e.key.toLowerCase() === 'd' && selectedId){
+    e.preventDefault();
+    duplicateElement(selectedId);
+  }
+  if(e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z'){
+    e.preventDefault();
+    undo();
+  }
+  if(e.ctrlKey && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))){
+    e.preventDefault();
+    redo();
+  }
+});
+
+/* ==================== CAMADAS ==================== */
+function deleteElement(id){
+  const page = currentPage();
+  const linkedCaption = page.elements.find(e=>e.captionFor === id);
+  const idsToRemove = linkedCaption ? [id, linkedCaption.id] : [id];
+  page.elements = page.elements.filter(e=>!idsToRemove.includes(e.id));
+  idsToRemove.forEach(rid=>{
+    const node = pageEl().querySelector(`[data-id="${rid}"]`);
+    if(node) node.remove();
+  });
+  if(idsToRemove.includes(selectedId)) selectedId = null;
+  if(idsToRemove.includes(editingId)) editingId = null;
+  updatePropsPanel();
+}
+function duplicateElement(id){
+  const el = getEl(id);
+  if(!el) return;
+  const clone = JSON.parse(JSON.stringify(el));
+  clone.id = uid();
+  clone.x += 20; clone.y += 20;
+  clone.z = ++zCounter;
+  currentPage().elements.push(clone);
+  pageEl().appendChild(createElementNode(clone));
+  const linkedCaption = currentPage().elements.find(e=>e.captionFor === id);
+  if(linkedCaption){
+    const capClone = JSON.parse(JSON.stringify(linkedCaption));
+    capClone.id = uid();
+    capClone.x += 20; capClone.y += 20;
+    capClone.z = ++zCounter;
+    capClone.captionFor = clone.id;
+    currentPage().elements.push(capClone);
+    pageEl().appendChild(createElementNode(capClone));
+  }
+  selectElement(clone.id);
+}
+function bringToFront(id){
+  const el = getEl(id); if(!el) return;
+  el.z = ++zCounter;
+  const node = pageEl().querySelector(`[data-id="${id}"]`);
+  if(node) node.style.zIndex = el.z;
+}
+function sendToBack(id){
+  const el = getEl(id); if(!el) return;
+  const zs = currentPage().elements.map(e=>e.z);
+  el.z = Math.min(...zs) - 1;
+  const node = pageEl().querySelector(`[data-id="${id}"]`);
+  if(node) node.style.zIndex = el.z;
+}
+document.getElementById('btnDelete').addEventListener('click', ()=>{ if(selectedId) deleteElement(selectedId); });
+document.getElementById('btnDuplicate').addEventListener('click', ()=>{ if(selectedId) duplicateElement(selectedId); });
+document.getElementById('btnFront').addEventListener('click', ()=>{ if(selectedId) bringToFront(selectedId); });
+document.getElementById('btnBack').addEventListener('click', ()=>{ if(selectedId) sendToBack(selectedId); });
+
+/* ==================== ORGANIZAÇÃO AUTOMÁTICA ====================
+   Ação simples e previsível (não uma "IA de layout"): reempilha textos e
+   imagens em uma coluna única, na mesma ordem vertical em que já estavam,
+   com espaçamento consistente. Formas/linhas ficam onde estão (costumam ser
+   decorativas/posicionadas de propósito). Sempre com um "desfazer" de um
+   nível logo em seguida, para não travar o usuário em um resultado ruim. */
+let lastAutoArrangeSnapshot = null;
+
+function autoArrangePage(){
+  const page = currentPage();
+  const targets = page.elements.filter(el=>el.type === 'text' || el.type === 'image' || el.type === 'video');
+  if(targets.length === 0) return;
+  if(!confirm('Realinhar textos e imagens desta página em uma coluna única, com espaçamento consistente? Formas e linhas não serão movidas. Dá para desfazer logo em seguida.')) return;
+
+  if(editingId) exitEditMode(editingId);
+
+  lastAutoArrangeSnapshot = page.elements.map(el=>({id:el.id, x:el.x, y:el.y, w:el.w}));
+
+  const sizeCfg = PAGE_SIZES[doc.pageSizeKey];
+  const margin = 60;
+  const contentWidth = sizeCfg.w - margin*2;
+  const ordered = targets.slice().sort((a,b)=>a.y - b.y);
+
+  let cursorY = 40;
+  ordered.forEach((el, idx)=>{
+    const node = pageEl().querySelector(`[data-id="${el.id}"]`);
+    if(!node) return;
+    if(el.type === 'text'){
+      const isHeading = el.style.fontSize >= 19 && el.style.fontWeight >= 600;
+      if(idx > 0) cursorY += isHeading ? 34 : 20;
+      el.x = margin;
+      el.w = contentWidth;
+      el.y = cursorY;
+      node.style.left = el.x+'px'; node.style.top = el.y+'px'; node.style.width = el.w+'px';
+      cursorY += node.offsetHeight;
+    } else if(el.type === 'image' || el.type === 'video'){
+      if(idx > 0) cursorY += 20;
+      el.x = Math.max(margin, Math.round((sizeCfg.w - el.w)/2));
+      el.y = cursorY;
+      node.style.left = el.x+'px'; node.style.top = el.y+'px';
+      cursorY += el.h;
+    }
+  });
+
+  if(sizeCfg.continuous) adjustContinuousHeight();
+  document.getElementById('btnUndoArrange').style.display = 'inline-block';
+  scheduleAutosave();
+  scheduleHistorySnapshot();
+}
+
+function undoAutoArrange(){
+  if(!lastAutoArrangeSnapshot) return;
+  lastAutoArrangeSnapshot.forEach(snap=>{
+    const el = getEl(snap.id);
+    if(!el) return;
+    el.x = snap.x; el.y = snap.y; el.w = snap.w;
+    const node = pageEl().querySelector(`[data-id="${snap.id}"]`);
+    if(node){ node.style.left = el.x+'px'; node.style.top = el.y+'px'; node.style.width = el.w+'px'; }
+  });
+  lastAutoArrangeSnapshot = null;
+  document.getElementById('btnUndoArrange').style.display = 'none';
+  const sizeCfg = PAGE_SIZES[doc.pageSizeKey];
+  if(sizeCfg.continuous) adjustContinuousHeight();
+  scheduleAutosave();
+  scheduleHistorySnapshot();
+}
+document.getElementById('btnAutoArrange').addEventListener('click', autoArrangePage);
+document.getElementById('btnUndoArrange').addEventListener('click', undoAutoArrange);
+
+/* ==================== PAINEL DE PROPRIEDADES ==================== */
+function applyPropChange(mutator){
+  if(!selectedId) return;
+  const el = getEl(selectedId);
+  if(!el) return;
+  mutator(el);
+  refreshElementVisual(el.id);
+}
+
+function updatePropsPanel(){
+  const propsEmpty = document.getElementById('propsEmpty');
+  const propsBody = document.getElementById('propsBody');
+  const el = selectedId ? getEl(selectedId) : null;
+  if(!el){
+    propsEmpty.style.display = 'block';
+    propsBody.style.display = 'none';
+    return;
+  }
+  propsEmpty.style.display = 'none';
+  propsBody.style.display = 'block';
+
+  const isText = el.type === 'text';
+  const isImage = el.type === 'image' || el.type === 'video';
+  const isShape = SHAPE_TYPES.includes(el.type);
+
+  document.getElementById('secText').style.display = isText ? 'block' : 'none';
+  document.getElementById('secImage').style.display = isImage ? 'block' : 'none';
+  document.getElementById('secShapeTransform').style.display = isShape ? 'block' : 'none';
+
+  if(isText){
+    document.getElementById('propFontFamily').value = el.style.fontFamily;
+    document.getElementById('propFontSize').value = el.style.fontSize;
+    document.getElementById('propColor').value = el.style.color;
+    document.getElementById('propLineHeight').value = el.style.lineHeight;
+    document.getElementById('propLineHeightValue').textContent = el.style.lineHeight;
+    document.getElementById('propPadding').value = el.style.padding;
+    document.getElementById('btnBold').classList.toggle('active', el.style.fontWeight >= 700);
+    document.getElementById('btnItalic').classList.toggle('active', el.style.fontStyle === 'italic');
+    document.getElementById('btnUnderline').classList.toggle('active', el.style.textDecoration === 'underline');
+    document.querySelectorAll('.align-btn').forEach(b=>b.classList.toggle('active', b.dataset.align === el.style.textAlign));
+  }
+  if(isImage){
+    document.getElementById('propImgWidth').value = Math.round(el.w);
+    document.getElementById('propImgHeight').value = Math.round(el.h);
+    document.getElementById('propLockAspect').checked = el.lockAspect;
+  }
+  if(isShape){
+    const rot = el.rotation || 0;
+    document.getElementById('propRotation').value = rot;
+    document.getElementById('propRotationValue').textContent = rot + '°';
+    document.getElementById('btnFlipH').classList.toggle('active', !!el.flipH);
+    document.getElementById('btnFlipV').classList.toggle('active', !!el.flipV);
+  }
+
+  document.getElementById('propBg').value = (el.style.background === 'transparent') ? '#ffffff' : el.style.background;
+  document.getElementById('propBgTransparent').checked = el.style.background === 'transparent';
+  document.getElementById('propBorderColor').value = el.style.borderColor;
+  document.getElementById('propBorderWidth').value = el.style.borderWidth;
+  document.getElementById('propBorderRadius').value = el.style.borderRadius;
+  document.getElementById('propOpacity').value = el.style.opacity;
+  document.getElementById('propOpacityValue').textContent = el.style.opacity+'%';
+  document.getElementById('propShadow').checked = el.style.shadow;
+}
+
+document.getElementById('propFontFamily').addEventListener('change', e=>applyPropChange(el=>el.style.fontFamily = e.target.value));
+document.getElementById('propFontSize').addEventListener('input', e=>applyPropChange(el=>el.style.fontSize = parseFloat(e.target.value) || 15));
+document.getElementById('propColor').addEventListener('input', e=>applyPropChange(el=>el.style.color = e.target.value));
+document.getElementById('propLineHeight').addEventListener('input', e=>{
+  document.getElementById('propLineHeightValue').textContent = e.target.value;
+  applyPropChange(el=>el.style.lineHeight = e.target.value);
+});
+document.getElementById('propPadding').addEventListener('input', e=>applyPropChange(el=>el.style.padding = parseFloat(e.target.value) || 0));
+
+/* Clicar num botão normalmente tira o foco da caixa de texto ANTES do
+   'click' disparar (blur -> exitEditMode -> perde a seleção), fazendo o
+   negrito/itálico/sublinhado/link cair no ramo "aplica no elemento inteiro"
+   mesmo com um trecho selecionado. Bloquear o comportamento padrão do
+   'mousedown' nesses botões mantém o foco e a seleção intactos. */
+['btnBold','btnItalic','btnUnderline','btnLink'].forEach(id=>{
+  document.getElementById(id).addEventListener('mousedown', e=>e.preventDefault());
+});
+document.getElementById('btnBold').addEventListener('click', ()=>{
+  const el = getEl(selectedId); if(!el) return;
+  if(editingId === el.id){ document.execCommand('bold'); }
+  else { applyPropChange(el=>{ el.style.fontWeight = (el.style.fontWeight >= 700) ? 400 : 700; }); }
+  document.getElementById('btnBold').classList.toggle('active');
+});
+document.getElementById('btnItalic').addEventListener('click', ()=>{
+  const el = getEl(selectedId); if(!el) return;
+  if(editingId === el.id){ document.execCommand('italic'); }
+  else { applyPropChange(el=>{ el.style.fontStyle = (el.style.fontStyle === 'italic') ? 'normal' : 'italic'; }); }
+  document.getElementById('btnItalic').classList.toggle('active');
+});
+document.getElementById('btnUnderline').addEventListener('click', ()=>{
+  const el = getEl(selectedId); if(!el) return;
+  if(editingId === el.id){ document.execCommand('underline'); }
+  else { applyPropChange(el=>{ el.style.textDecoration = (el.style.textDecoration === 'underline') ? 'none' : 'underline'; }); }
+  document.getElementById('btnUnderline').classList.toggle('active');
+});
+document.getElementById('btnLink').addEventListener('click', ()=>{
+  const el = getEl(selectedId);
+  if(!el || el.type !== 'text') return;
+  if(editingId !== el.id){ alert('Clique duas vezes no texto para editar, selecione o trecho desejado e clique em 🔗 de novo.'); return; }
+  const sel = window.getSelection();
+  if(!sel || sel.isCollapsed){ alert('Selecione o trecho de texto que vai virar link.'); return; }
+  const url = prompt('Endereço do link:', 'https://');
+  if(!url) return;
+  if(!/^https?:\/\//i.test(url)){ alert('Use um link começando com http:// ou https://'); return; }
+  document.execCommand('createLink', false, url);
+  const content = pageEl().querySelector(`[data-id="${el.id}"] .el-text-inner`);
+  if(content){
+    content.querySelectorAll('a').forEach(a=>{ a.target = '_blank'; a.rel = 'noopener noreferrer'; });
+  }
+});
+document.querySelectorAll('.align-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    applyPropChange(el=>el.style.textAlign = btn.dataset.align);
+    document.querySelectorAll('.align-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+document.getElementById('propBg').addEventListener('input', e=>{
+  document.getElementById('propBgTransparent').checked = false;
+  applyPropChange(el=>el.style.background = e.target.value);
+});
+document.getElementById('propBgTransparent').addEventListener('change', e=>{
+  applyPropChange(el=>el.style.background = e.target.checked ? 'transparent' : document.getElementById('propBg').value);
+});
+document.getElementById('propBorderColor').addEventListener('input', e=>applyPropChange(el=>el.style.borderColor = e.target.value));
+document.getElementById('propBorderWidth').addEventListener('input', e=>applyPropChange(el=>el.style.borderWidth = parseFloat(e.target.value) || 0));
+document.getElementById('propBorderRadius').addEventListener('input', e=>applyPropChange(el=>el.style.borderRadius = parseFloat(e.target.value) || 0));
+document.getElementById('propOpacity').addEventListener('input', e=>{
+  document.getElementById('propOpacityValue').textContent = e.target.value+'%';
+  applyPropChange(el=>el.style.opacity = parseFloat(e.target.value));
+});
+document.getElementById('propShadow').addEventListener('change', e=>applyPropChange(el=>el.style.shadow = e.target.checked));
+
+document.getElementById('propImgWidth').addEventListener('input', e=>{
+  const el = getEl(selectedId); if(!el) return;
+  let w = parseFloat(e.target.value) || el.w;
+  if(el.lockAspect && el.h){ const ratio = el.w/el.h; el.h = w/ratio; document.getElementById('propImgHeight').value = Math.round(el.h); }
+  el.w = w;
+  const node = pageEl().querySelector(`[data-id="${el.id}"]`);
+  if(node){ node.style.width = el.w+'px'; node.style.height = el.h+'px'; }
+});
+document.getElementById('propImgHeight').addEventListener('input', e=>{
+  const el = getEl(selectedId); if(!el) return;
+  let h = parseFloat(e.target.value) || el.h;
+  if(el.lockAspect && el.w){ const ratio = el.w/el.h; el.w = h*ratio; document.getElementById('propImgWidth').value = Math.round(el.w); }
+  el.h = h;
+  const node = pageEl().querySelector(`[data-id="${el.id}"]`);
+  if(node){ node.style.width = el.w+'px'; node.style.height = el.h+'px'; }
+});
+document.getElementById('propLockAspect').addEventListener('change', e=>{
+  const el = getEl(selectedId); if(!el) return;
+  el.lockAspect = e.target.checked;
+});
+document.getElementById('propRotation').addEventListener('input', e=>{
+  document.getElementById('propRotationValue').textContent = e.target.value + '°';
+  applyPropChange(el=>{ el.rotation = parseFloat(e.target.value) || 0; });
+});
+document.getElementById('btnFlipH').addEventListener('click', ()=>{
+  applyPropChange(el=>{ el.flipH = !el.flipH; });
+  document.getElementById('btnFlipH').classList.toggle('active');
+});
+document.getElementById('btnFlipV').addEventListener('click', ()=>{
+  applyPropChange(el=>{ el.flipV = !el.flipV; });
+  document.getElementById('btnFlipV').classList.toggle('active');
+});
+
+/* ==================== PÁGINAS ==================== */
+function updatePagesPanel(){
+  const select = document.getElementById('pagesSelect');
+  select.innerHTML = '';
+  doc.pages.forEach((p, idx)=>{
+    const opt = document.createElement('option');
+    opt.value = idx;
+    opt.textContent = 'Página ' + (idx+1);
+    select.appendChild(opt);
+  });
+  select.value = currentPageIdx;
+  document.getElementById('pageIndicator').textContent = `Página ${currentPageIdx+1} de ${doc.pages.length}`;
+}
+function switchPage(idx){
+  if(editingId) exitEditMode(editingId);
+  deselectAll();
+  currentPageIdx = idx;
+  lastAutoArrangeSnapshot = null;
+  document.getElementById('btnUndoArrange').style.display = 'none';
+  renderPage();
+}
+function addPage(){
+  doc.pages.push(newPage());
+  switchPage(doc.pages.length - 1);
+  scheduleAutosave();
+  scheduleHistorySnapshot();
+}
+function duplicateCurrentPage(){
+  const clone = JSON.parse(JSON.stringify(currentPage()));
+  clone.id = uid();
+  clone.elements.forEach(e=>e.id = uid());
+  doc.pages.splice(currentPageIdx+1, 0, clone);
+  switchPage(currentPageIdx+1);
+  scheduleAutosave();
+  scheduleHistorySnapshot();
+}
+function deletePage(idx){
+  if(doc.pages.length <= 1) return;
+  doc.pages.splice(idx, 1);
+  if(currentPageIdx >= doc.pages.length) currentPageIdx = doc.pages.length - 1;
+  switchPage(currentPageIdx);
+  scheduleAutosave();
+  scheduleHistorySnapshot();
+}
+document.getElementById('btnAddPage').addEventListener('click', addPage);
+document.getElementById('btnDuplicatePage').addEventListener('click', duplicateCurrentPage);
+document.getElementById('btnDeletePage').addEventListener('click', ()=>{
+  if(doc.pages.length <= 1){ alert('Não é possível excluir a única página do documento.'); return; }
+  if(!confirm(`Excluir a Página ${currentPageIdx+1}? Todo o conteúdo dela será perdido.`)) return;
+  deletePage(currentPageIdx);
+});
+document.getElementById('pagesSelect').addEventListener('change', e=>{
+  switchPage(parseInt(e.target.value, 10));
+});
+document.getElementById('btnPrevPage').addEventListener('click', ()=>{ if(currentPageIdx > 0) switchPage(currentPageIdx-1); });
+document.getElementById('btnNextPage').addEventListener('click', ()=>{ if(currentPageIdx < doc.pages.length-1) switchPage(currentPageIdx+1); });
+
+/* ==================== DOCUMENTO / ZOOM ==================== */
+document.getElementById('docTitleInput').addEventListener('input', e=>{
+  doc.title = e.target.value;
+  scheduleAutosave();
+  scheduleHistorySnapshot();
+});
+document.getElementById('pageSizeSelect').addEventListener('change', e=>{
+  doc.pageSizeKey = e.target.value;
+  renderPage();
+  scheduleAutosave();
+  scheduleHistorySnapshot();
+});
+document.getElementById('zoomRange').addEventListener('input', e=>{
+  zoom = parseFloat(e.target.value)/100;
+  document.getElementById('zoomValue').textContent = e.target.value+'%';
+  document.getElementById('pageWrapper').style.transform = `scale(${zoom})`;
+});
+document.getElementById('pageWrapper').style.transform = `scale(${zoom})`;
+
+document.getElementById('btnNewDoc').addEventListener('click', ()=>{
+  if(!confirm('Criar novo documento? Ele será salvo automaticamente à parte — o documento atual continua na lista de Documentos Salvos.')) return;
+  loadDocObject({ id: uid(), title:'Documento sem título', pageSizeKey:'continuous', pages:[newPageWithHeader()] });
+});
+
+/* ==================== PAINÉIS COLAPSÁVEIS ==================== */
+document.querySelectorAll('.panel-head').forEach(head=>{
+  head.addEventListener('click', ()=>head.parentElement.classList.toggle('collapsed'));
+});
+
+/* ==================== EXPORT ==================== */
+function syncEditingBeforeSave(){ if(editingId) exitEditMode(editingId); }
+
+function buildStaticPageNode(page, sizeCfg){
+  const div = document.createElement('div');
+  div.className = 'page';
+  div.style.position = 'relative';
+  div.style.width = sizeCfg.w+'px';
+  if(!sizeCfg.continuous) div.style.height = sizeCfg.h+'px';
+  div.style.background = '#ffffff';
+  div.style.margin = '0 auto 24px';
+  div.style.boxShadow = '0 8px 30px rgba(13,74,143,.15)';
+  div.style.overflow = 'hidden';
+  page.elements.slice().sort((a,b)=>a.z-b.z).forEach(el=>{
+    const node = document.createElement('div');
+    node.style.position = 'absolute';
+    node.style.left = el.x+'px'; node.style.top = el.y+'px'; node.style.width = el.w+'px';
+    if(el.type !== 'text') node.style.height = el.h+'px';
+    node.style.zIndex = el.z;
+    applyBoxStyle(node, el);
+    node.style.cursor = 'default';
+    if(el.type === 'text'){
+      const content = document.createElement('div');
+      content.className = 'el-text-inner';
+      applyTextStyle(content, el.style);
+      content.innerHTML = el.content;
+      node.appendChild(content);
+    } else if(el.type === 'image'){
+      const img = document.createElement('img');
+      img.src = el.src;
+      img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'fill';
+      img.style.display = 'block'; img.style.borderRadius = 'inherit';
+      node.appendChild(img);
+    } else if(el.type === 'video'){
+      const iframe = document.createElement('iframe');
+      iframe.src = el.embedUrl;
+      iframe.style.width = '100%'; iframe.style.height = '100%'; iframe.style.border = 'none';
+      iframe.style.borderRadius = 'inherit';
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+      node.appendChild(iframe);
+    } else if(SVG_SHAPE_TYPES.includes(el.type)){
+      const wrap = document.createElement('div');
+      wrap.style.width = '100%'; wrap.style.height = '100%';
+      wrap.innerHTML = svgForShape(el);
+      node.appendChild(wrap);
+    }
+    div.appendChild(node);
+  });
+  if(sizeCfg.continuous){
+    // filhos são todos position:absolute — o div não ganha altura própria
+    // sozinho, então medimos fora da tela e fixamos a altura real do conteúdo.
+    const holder = document.createElement('div');
+    holder.style.position = 'fixed'; holder.style.left = '-99999px'; holder.style.top = '0';
+    holder.appendChild(div);
+    document.body.appendChild(holder);
+    let maxBottom = 0;
+    Array.from(div.children).forEach(node=>{
+      const bottom = node.offsetTop + node.offsetHeight;
+      if(bottom > maxBottom) maxBottom = bottom;
+    });
+    div.style.height = Math.max(CONTINUOUS_MIN_H, maxBottom + 60) + 'px';
+    document.body.removeChild(holder);
+  }
+  return div;
+}
+
+function exportJSON(){
+  syncEditingBeforeSave();
+  const blob = new Blob([JSON.stringify(doc, null, 2)], {type:'application/json'});
+  saveAs(blob, `${doc.title || 'documento'}.json`);
+}
+function importJSON(){
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = e=>{
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = evt=>{
+      try{
+        const data = JSON.parse(evt.target.result);
+        loadDocObject(data);
+        scheduleAutosave();
+      } catch(err){
+        alert('Erro ao importar: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+document.getElementById('btnExportJSON').addEventListener('click', exportJSON);
+document.getElementById('btnImportJSON').addEventListener('click', importJSON);
+
+function exportHTML(){
+  syncEditingBeforeSave();
+  const sizeCfg = PAGE_SIZES[doc.pageSizeKey];
+  let pagesHtml = '';
+  doc.pages.forEach(page=>{
+    pagesHtml += buildStaticPageNode(page, sizeCfg).outerHTML + '\n';
+  });
+  const full = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(doc.title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{background:#e6e0d1; margin:0; padding:40px 0; font-family:'Inter',sans-serif;}
+  .page{background:#fff;}
+  .page ul, .page ol{margin:0; padding-left:26px;}
+  .page ul{list-style-type:disc;}
+  .page ul ul{list-style-type:circle;}
+  .page ul ul ul{list-style-type:square;}
+  .page li{margin-bottom:6px;}
+  @media print{
+    body{background:#fff; padding:0;}
+    .page{box-shadow:none !important; margin:0 auto !important; page-break-after:always;}
+  }
+</style>
+</head>
+<body>
+${pagesHtml}
+</body>
+</html>`;
+  const blob = new Blob([full], {type:'text/html'});
+  saveAs(blob, `${doc.title || 'documento'}.html`);
+}
+document.getElementById('btnExportHTML').addEventListener('click', exportHTML);
+
+function loadHtml2Pdf(){
+  return new Promise(resolve=>{
+    if(window.html2pdf){ resolve(); return; }
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    script.onload = resolve;
+    script.onerror = ()=>{ alert('Erro ao carregar biblioteca de PDF.'); resolve(); };
+    document.head.appendChild(script);
+  });
+}
+async function exportPDF(){
+  syncEditingBeforeSave();
+  await loadHtml2Pdf();
+  if(!window.html2pdf){ alert('Não foi possível carregar a biblioteca de PDF.'); return; }
+  const sizeCfg = PAGE_SIZES[doc.pageSizeKey];
+  const container = document.createElement('div');
+  container.style.position = 'fixed'; container.style.left = '-99999px'; container.style.top = '0';
+  doc.pages.forEach((page, idx)=>{
+    const node = buildStaticPageNode(page, sizeCfg);
+    node.style.margin = '0';
+    if(idx < doc.pages.length - 1) node.style.pageBreakAfter = 'always';
+    container.appendChild(node);
+  });
+  document.body.appendChild(container);
+  const opt = {
+    margin: 0,
+    filename: `${doc.title || 'documento'}.pdf`,
+    image: {type:'jpeg', quality:0.98},
+    html2canvas: {scale:2, useCORS:true, logging:false, backgroundColor:'#ffffff'},
+    // páginas de tamanho fixo mapeiam pixel-a-pixel para o formato exato;
+    // a página contínua usa o formato físico padrão e deixa o jsPDF
+    // paginar automaticamente o conteúdo, como um documento de texto comum.
+    jsPDF: sizeCfg.continuous
+      ? {orientation:'portrait', unit:'mm', format:'a4'}
+      : {orientation: sizeCfg.orientation, unit:'px', format:[sizeCfg.w, sizeCfg.h]},
+    pagebreak: {mode:['css']}
+  };
+  try{
+    await window.html2pdf().set(opt).from(container).save();
+  } catch(err){
+    alert('Erro ao gerar PDF: ' + err.message);
+  } finally {
+    document.body.removeChild(container);
+  }
+}
+document.getElementById('btnExportPDF').addEventListener('click', exportPDF);
+
+/* ==================== DESFAZER / REFAZER ====================
+   Guarda snapshots (JSON) do documento inteiro em pontos de checkpoint —
+   fim de arrastar/redimensionar, pausa na digitação, inserir/excluir/duplicar
+   elemento, mudanças no painel de propriedades — via o mesmo observador que
+   já aciona o autosave. Trocar de página sozinha NÃO cria um checkpoint (só
+   o conteúdo do documento é comparado, não currentPageIdx), então navegar
+   não polui o histórico. */
+let historyStack = [];
+let historyIndex = -1;
+let historyTimer = null;
+let historyLastPushTime = 0;
+let isRestoringHistory = false;
+const HISTORY_MAX = 40;
+const HISTORY_DEBOUNCE = 600;
+const HISTORY_MAX_WAIT = 4000;
+
+function pushHistory(){
+  if(isRestoringHistory) return;
+  const docSnap = JSON.stringify(doc);
+  const last = historyStack[historyIndex];
+  if(last && last.docSnap === docSnap) return;
+  historyStack = historyStack.slice(0, historyIndex + 1);
+  historyStack.push({ docSnap, pageIdx: currentPageIdx });
+  if(historyStack.length > HISTORY_MAX) historyStack.shift();
+  historyIndex = historyStack.length - 1;
+  updateHistoryButtons();
+}
+function scheduleHistorySnapshot(){
+  if(isRestoringHistory) return;
+  clearTimeout(historyTimer);
+  const now = Date.now();
+  if(historyLastPushTime && now - historyLastPushTime > HISTORY_MAX_WAIT){
+    pushHistory();
+    historyLastPushTime = now;
+  } else {
+    historyTimer = setTimeout(()=>{ pushHistory(); historyLastPushTime = Date.now(); }, HISTORY_DEBOUNCE);
+  }
+}
+function resetHistory(){
+  historyStack = [];
+  historyIndex = -1;
+  pushHistory();
+}
+function restoreHistoryEntry(entry){
+  isRestoringHistory = true;
+  if(editingId){
+    const outer = pageEl().querySelector(`[data-id="${editingId}"]`);
+    const content = outer && outer.querySelector('.el-text-inner');
+    if(content) content.contentEditable = 'false';
+    editingId = null;
+  }
+  doc = JSON.parse(entry.docSnap);
+  currentPageIdx = Math.min(entry.pageIdx, doc.pages.length - 1);
+  selectedId = null;
+  zCounter = 1;
+  doc.pages.forEach(p=>p.elements.forEach(el=>{ zCounter = Math.max(zCounter, (el.z||0)+1); }));
+  document.getElementById('docTitleInput').value = doc.title || '';
+  document.getElementById('pageSizeSelect').value = doc.pageSizeKey || 'continuous';
+  renderPage();
+  updateHistoryButtons();
+  isRestoringHistory = false;
+  scheduleAutosave();
+}
+function undo(){
+  if(historyIndex <= 0) return;
+  historyIndex--;
+  restoreHistoryEntry(historyStack[historyIndex]);
+}
+function redo(){
+  if(historyIndex >= historyStack.length - 1) return;
+  historyIndex++;
+  restoreHistoryEntry(historyStack[historyIndex]);
+}
+function updateHistoryButtons(){
+  document.getElementById('btnUndo').disabled = historyIndex <= 0;
+  document.getElementById('btnRedo').disabled = historyIndex >= historyStack.length - 1;
+}
+document.getElementById('btnUndo').addEventListener('click', undo);
+document.getElementById('btnRedo').addEventListener('click', redo);
+
+/* ==================== ABRIR DOCUMENTO (compartilhado) ==================== */
+function loadDocObject(data){
+  doc = data;
+  if(!doc.id) doc.id = uid();
+  if(!doc.pageSizeKey) doc.pageSizeKey = 'continuous';
+  currentPageIdx = 0; selectedId = null; editingId = null;
+  zCounter = 1;
+  doc.pages.forEach(p=>p.elements.forEach(el=>{ zCounter = Math.max(zCounter, (el.z||0)+1); }));
+  document.getElementById('docTitleInput').value = doc.title || '';
+  document.getElementById('pageSizeSelect').value = doc.pageSizeKey;
+  renderPage();
+  updateSavedDocsPanel();
+  resetHistory();
+}
+
+/* ==================== DOCUMENTOS SALVOS (autosave local) ====================
+   Cada edição relevante é salva sozinha no localStorage deste navegador, sob
+   uma chave por documento (doc.id), com título e data. Isso resolve reabrir
+   um documento dias/meses depois sem precisar guardar/achar um arquivo — tudo
+   fica local (nada sai da máquina) e o "Salvar JSON" continua disponível como
+   cópia portátil/permanente, caso o usuário troque de navegador ou computador. */
+const AUTOSAVE_KEY = 'criadorDocumentos.savedDocs.v1';
+const AUTOSAVE_MAX = 15;
+let autosaveTimer = null;
+
+function loadSavedDocsIndex(){
+  try{
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e){ return []; }
+}
+function saveSavedDocsIndex(list){
+  try{
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(list));
+    return true;
+  } catch(e){
+    console.warn('Autosave local falhou (armazenamento cheio ou indisponível):', e);
+    return false;
+  }
+}
+function scheduleAutosave(){
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(persistDocToLocalStorage, 1200);
+}
+function persistDocToLocalStorage(){
+  if(editingId){
+    const outer = pageEl().querySelector(`[data-id="${editingId}"]`);
+    const content = outer && outer.querySelector('.el-text-inner');
+    const el = getEl(editingId);
+    if(content && el) el.content = content.innerHTML;
+  }
+  if(!doc.id) doc.id = uid();
+  let list = loadSavedDocsIndex().filter(d=>d.id !== doc.id);
+  list.unshift({ id: doc.id, title: doc.title || 'Documento sem título', updatedAt: Date.now(), data: doc });
+  if(list.length > AUTOSAVE_MAX) list = list.slice(0, AUTOSAVE_MAX);
+  const ok = saveSavedDocsIndex(list);
+  const status = document.getElementById('autosaveStatus');
+  status.textContent = ok
+    ? ('Salvo automaticamente às ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}))
+    : 'Armazenamento local cheio — use "Salvar JSON" para não perder o trabalho.';
+  updateSavedDocsPanel();
+}
+function relativeTime(ts){
+  const diffMin = Math.floor((Date.now()-ts)/60000);
+  if(diffMin < 1) return 'agora mesmo';
+  if(diffMin < 60) return `há ${diffMin} min`;
+  const diffH = Math.floor(diffMin/60);
+  if(diffH < 24) return `há ${diffH} h`;
+  const diffD = Math.floor(diffH/24);
+  if(diffD < 30) return `há ${diffD} dia${diffD>1?'s':''}`;
+  const diffM = Math.floor(diffD/30);
+  return `há ${diffM} mês${diffM>1?'es':''}`;
+}
+function updateSavedDocsPanel(){
+  const list = loadSavedDocsIndex();
+  const select = document.getElementById('savedDocsSelect');
+  select.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = list.length === 0 ? '📂 Nenhum documento salvo ainda' : '📂 Documentos salvos…';
+  select.appendChild(placeholder);
+  list.forEach(item=>{
+    const opt = document.createElement('option');
+    opt.value = item.id;
+    opt.textContent = `${item.title || 'Documento sem título'} — ${relativeTime(item.updatedAt)}`;
+    select.appendChild(opt);
+  });
+  select.value = list.some(d=>d.id === doc.id) ? doc.id : '';
+}
+function openSavedDoc(id){
+  if(editingId) exitEditMode(editingId);
+  const item = loadSavedDocsIndex().find(d=>d.id === id);
+  if(!item) return;
+  loadDocObject(JSON.parse(JSON.stringify(item.data)));
+}
+function deleteSavedDoc(id){
+  if(!confirm('Remover este documento da lista de salvos neste navegador? (não afeta nenhum arquivo JSON já exportado; se você continuar editando, ele volta a ser salvo automaticamente)')) return;
+  saveSavedDocsIndex(loadSavedDocsIndex().filter(d=>d.id !== id));
+  updateSavedDocsPanel();
+}
+document.getElementById('savedDocsSelect').addEventListener('change', e=>{
+  const id = e.target.value;
+  if(id) openSavedDoc(id);
+});
+document.getElementById('btnDeleteSavedDoc').addEventListener('click', ()=>{
+  const id = document.getElementById('savedDocsSelect').value;
+  if(!id){ alert('Selecione, na lista, o documento que deseja remover dos salvos.'); return; }
+  deleteSavedDoc(id);
+});
+
+window.addEventListener('beforeunload', ()=>{
+  clearTimeout(autosaveTimer);
+  persistDocToLocalStorage();
+});
+
+/* ==================== INIT ==================== */
+renderPage();
+updateSavedDocsPanel();
+resetHistory();
+</script>
+</body>
+</html>
