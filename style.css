@@ -89,3 +89,49 @@ a:hover{text-decoration:underline}
 
 /* Ensure programs pages (inline JS) still load fonts */
 @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+
+/* Oculta o botão "Menu" deslocado */
+button.menu,
+button#menu-toggle,
+button.nav-toggle,
+.menu-button {
+  display: none !important;
+}
+
+/* Estilo do título principal */
+.site-title {
+  font-family: "Merriweather", Georgia, "Times New Roman", serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.1;
+  color: #111;
+}
+@media (max-width: 768px) {
+  .site-title { font-size: 1.4rem; text-align: left; }
+}
+
+/* Grid dos cards */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+.card {
+  background: #f7f9fb;
+  padding: 1.4rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(20,30,40,0.06);
+  border: 1px solid rgba(20,30,40,0.04);
+}
+.card h3 { font-family: "Merriweather", serif; font-size: 1.2rem; margin-bottom: 0.6rem; }
+.card p { color: #444; margin-bottom: 1rem; }
+.card-link { color: #2b6cb0; text-decoration: none; }
+@media (max-width: 992px) {
+  .cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .cards-grid { grid-template-columns: 1fr; }
+}
+
