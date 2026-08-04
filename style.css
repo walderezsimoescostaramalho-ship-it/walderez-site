@@ -1,0 +1,82 @@
+/* ======== TEMA ACADÊMICO ======== */
+
+body {
+    margin: 0;
+    font-family: "Georgia", serif;
+    background: #f4f4f4;
+    color: #333;
+}
+
+/* ======== CABEÇALHO ======== */
+
+header {
+    background: #2c3e50;
+    padding: 20px 30px;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 26px;
+}
+
+nav {
+    margin-top: 10px;
+}
+
+nav a {
+    color: #ecf0f1;
+    margin-right: 20px;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+/* ======== CONTEÚDO ======== */
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 40px;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    margin-top: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+/* ======== LISTAS DE PROGRAMAS ======== */
+
+.program-list a {
+    display: block;
+    padding: 12px;
+    margin: 8px 0;
+    background: #e0e0e0;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #333;
+    font-size: 18px;
+}
+
+.program-list a:hover {
+    background: #cfcfcf;
+}
+
+/* ======== RODAPÉ ======== */
+
+footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+    background: #2c3e50;
+    color: white;
+}
