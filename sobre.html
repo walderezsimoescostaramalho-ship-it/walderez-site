@@ -2,15 +2,20 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sobre – Walderez Ramalho</title>
 <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-<header>
-    <h1>Sobre</h1>
-    <nav>
+<a class="skip-link" href="#main">Pular para o conteúdo</a>
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="logo">Walderez Ramalho</div>
+      <div class="subtitle">Prof. Walderez Ramalho (UDESC)</div>
+    </div>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="main-nav" onclick="document.body.classList.toggle('nav-open'); this.setAttribute('aria-expanded', this.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');">☰</button>
+    <nav id="main-nav" class="nav" role="navigation">
         <a href="index.html">Início</a>
         <a href="ferramentas.html">Ferramentas</a>
         <a href="sobre.html">Sobre</a>
@@ -20,25 +25,20 @@
         <a href="arquivos.html">Arquivos</a>
         <a href="downloads.html">Downloads</a>
     </nav>
+  </div>
 </header>
 
-<div class="container">
+<main id="main" class="container">
+  <div class="card">
+    <h2>Sobre Walderez Ramalho</h2>
+    <p>Professor e pesquisador na área de Teoria da História, com interesse em temporalidade, narrativa histórica, epistemologia e ferramentas digitais aplicadas ao ensino e à pesquisa.</p>
+    <p>Este portal reúne materiais de ensino, publicações, projetos, ferramentas digitais e conteúdos experimentais desenvolvidos ao longo da trajetória acadêmica.</p>
+    <p>Para mais informações, acesse meu currículo Lattes.</p>
+    <p><a href="http://lattes.cnpq.br/9839983094596642" target="_blank">Currículo Lattes</a></p>
+  </div>
+</main>
 
-    <div class="card">
-        <h2>Sobre Walderez Ramalho</h2>
-
-        <p>Professor e pesquisador na área de Teoria da História, com interesse em temporalidade, narrativa histórica, epistemologia e ferramentas digitais aplicadas ao ensino e à pesquisa.</p>
-
-        <p>Este portal reúne materiais de ensino, publicações, projetos, ferramentas digitais e conteúdos experimentais desenvolvidos ao longo da trajetória acadêmica.</p>
-
-        <p>Para mais informações, acesse meu currículo Lattes.</p>
-
-        <p><a href="http://lattes.cnpq.br/9839983094596642" target="_blank">Currículo Lattes</a></p>
-    </div>
-
-</div>
-
-<footer>© 2026 – Walderez Ramalho</footer>
+<footer class="site-footer" role="contentinfo">© 2026 – Walderez Ramalho</footer>
 
 </body>
 </html>

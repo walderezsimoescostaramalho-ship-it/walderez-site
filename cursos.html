@@ -2,15 +2,20 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cursos – Walderez Ramalho</title>
 <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-<header>
-    <h1>Cursos</h1>
-    <nav>
+<a class="skip-link" href="#main">Pular para o conteúdo</a>
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="logo">Walderez Ramalho</div>
+      <div class="subtitle">Prof. Walderez Ramalho (UDESC)</div>
+    </div>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="main-nav" onclick="document.body.classList.toggle('nav-open'); this.setAttribute('aria-expanded', this.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');">☰</button>
+    <nav id="main-nav" class="nav" role="navigation">
         <a href="index.html">Início</a>
         <a href="ferramentas.html">Ferramentas</a>
         <a href="sobre.html">Sobre</a>
@@ -20,58 +25,57 @@
         <a href="arquivos.html">Arquivos</a>
         <a href="downloads.html">Downloads</a>
     </nav>
+  </div>
 </header>
 
-<div class="container">
+<main id="main" class="container">
+  <div class="card">
+    <h2>Disciplinas Ministradas</h2>
 
-    <div class="card">
-        <h2>Disciplinas Ministradas</h2>
-
-        <div class="block">
-            <div class="section-title">Teoria da História I</div>
-        </div>
-
-        <div class="block">
-            <div class="section-title">Teoria da História II</div>
-            <ul>
-                <li><a href="arquivos/planos_de_ensino/th2_plano_2026-02.html">Plano de Ensino – 2026/02</a></li>
-            </ul>
-        </div>
-
-        <div class="block">
-            <div class="section-title">Teoria da História III</div>
-            <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
-        </div>
-
-        <div class="block">
-            <div class="section-title">Teoria da História - ProfHistória</div>
-            <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
-        </div>
-
-        <div class="block">
-            <div class="section-title">História do Tempo Presente - teoria e historiografia</div>
-            <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
-        </div>
-
-        <div class="block">
-            <div class="section-title">História do Tempo Presente - temas emergentes</div>
-            <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
-        </div>
-
-        <div class="block">
-            <div class="section-title">Seminário de Pesquisa - PPGH</div>
-            <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
-        </div>
-
-        <div class="block">
-            <div class="section-title">Seminário de Pesquisa - ProfHistória</div>
-            <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
-        </div>
+    <div class="block">
+      <div class="section-title">Teoria da História I</div>
     </div>
 
-</div>
+    <div class="block">
+      <div class="section-title">Teoria da História II</div>
+      <ul class="section-list">
+        <li><span>Plano de Ensino – 2026/02</span><a href="arquivos/planos_de_ensino/th2_plano_2026-02.html">Abrir</a></li>
+      </ul>
+    </div>
 
-<footer>© 2026 – Walderez Ramalho</footer>
+    <div class="block">
+      <div class="section-title">Teoria da História III</div>
+      <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
+    </div>
 
+    <div class="block">
+      <div class="section-title">Teoria da História - ProfHistória</div>
+      <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
+    </div>
+
+    <div class="block">
+      <div class="section-title">História do Tempo Presente - teoria e historiografia</div>
+      <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
+    </div>
+
+    <div class="block">
+      <div class="section-title">História do Tempo Presente - temas emergentes</div>
+      <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
+    </div>
+
+    <div class="block">
+      <div class="section-title">Seminário de Pesquisa - PPGH</div>
+      <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
+    </div>
+
+    <div class="block">
+      <div class="section-title">Seminário de Pesquisa - ProfHistória</div>
+      <p>Estudo das bases filosóficas da produção do conhecimento histórico, com foco em autores clássicos e contemporâneos.</p>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer" role="contentinfo">© 2026 – Walderez Ramalho</footer>
 </body>
 </html>
