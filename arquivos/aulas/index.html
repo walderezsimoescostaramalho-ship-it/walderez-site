@@ -25,11 +25,73 @@
 <div class="container">
     <div class="card">
         <h2>Aulas</h2>
-        <p>Não há aulas cadastradas ainda.</p>
+        <p>Lista automática de materiais nesta pasta.</p>
+        <ul class="material-list" id="material-list" data-path="arquivos/aulas"></ul>
     </div>
 </div>
 
 <footer>© 2026 – Walderez Ramalho</footer>
+
+<script>
+(async () => {
+    const ul = document.getElementById('material-list');
+    const path = ul.getAttribute('data-path');
+
+    // ajuste aqui para o seu repositório
+    const owner = 'walderezsimoescostaramalho-ship-it';
+    const repo  = 'walderez-site';
+
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+
+    try {
+        const resp = await fetch(url);
+        if (!resp.ok) {
+            ul.innerHTML = '<li>Não foi possível carregar os materiais.</li>';
+            return;
+        }
+        const items = await resp.json();
+
+        // ordenar alfabeticamente pelo nome
+        items.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+
+        if (!items.length) {
+            ul.innerHTML = '<li>Não há materiais nesta pasta ainda.</li>';
+            return;
+        }
+
+        ul.innerHTML = '';
+        for (const item of items) {
+            const li = document.createElement('li');
+
+            if (item.type === 'dir') {
+                // subpasta
+                const a = document.createElement('a');
+                a.href = item.name + '/';
+                a.textContent = item.name + '/';
+                li.appendChild(a);
+                ul.appendChild(li);
+            } else if (item.type === 'file') {
+                const a = document.createElement('a');
+                a.href = item.name;
+                a.textContent = item.name; // inclui extensão
+
+                const meta = document.createElement('span');
+                meta.className = 'material-meta';
+                if (typeof item.size === 'number') {
+                    const kb = (item.size / 1024).toFixed(1);
+                    meta.textContent = `(${kb} KB)`;
+                }
+
+                li.appendChild(a);
+                li.appendChild(meta);
+                ul.appendChild(li);
+            }
+        }
+    } catch (e) {
+        ul.innerHTML = '<li>Erro ao carregar materiais.</li>';
+    }
+})();
+</script>
 
 </body>
 </html>
