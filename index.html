@@ -3,54 +3,66 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Início – Walderez Ramalho</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <header>
-        <h1>Walderez Ramalho</h1>
+    <header class="site-header">
+        <div class="logo">Walderez Ramalho</div>
         <nav>
-            <a href="index.html" target="_blank" rel="noopener noreferrer">Início</a>
-            <a href="ferramentas.html" target="_blank" rel="noopener noreferrer">Ferramentas</a>
-            <a href="sobre.html" target="_blank" rel="noopener noreferrer">Sobre</a>
-            <a href="publicacoes.html" target="_blank" rel="noopener noreferrer">Publicações</a>
-            <a href="cursos.html" target="_blank" rel="noopener noreferrer">Cursos</a>
-            <a href="projetos.html" target="_blank" rel="noopener noreferrer">Projetos</a>
-            <a href="arquivos.html" target="_blank" rel="noopener noreferrer">Arquivos</a>
-            <a href="downloads.html" target="_blank" rel="noopener noreferrer">Downloads</a>
+            <a href="index.html">Início</a>
+            <a href="ferramentas.html">Ferramentas</a>
+            <a href="sobre.html">Sobre</a>
+            <a href="publicacoes.html">Publicações</a>
+            <a href="cursos.html">Cursos</a>
+            <a href="projetos.html">Projetos</a>
+            <a href="arquivos.html">Arquivos</a>
+            <a href="downloads.html">Downloads</a>
         </nav>
     </header>
 
-    <div class="container">
-        <div class="card">
-            <h2>Bem-vindo</h2>
-            <p>Este é o portal acadêmico de Walderez Ramalho.</p>
-            <p>Explore ferramentas, materiais de ensino, publicações e projetos.</p>
-        </div>
+    <main class="container">
 
-        <!-- Segunda linha com 3 cards (mantém o visual dos cards existentes) -->
-        <div class="cards-grid" aria-label="Segunda linha de cards">
-            <div class="card card-mini">
-                <h3>Cursos</h3>
+        <h1 class="section-title">Bem-vindo</h1>
+        <p>Este é o portal acadêmico de Walderez Ramalho. Explore ferramentas, materiais de ensino, publicações e
+            projetos.</p>
+
+        <div class="card-grid">
+
+            <div class="card">
+                <h2>Cursos</h2>
                 <p>Informações sobre disciplinas ministradas e planos de ensino.</p>
-                <p><a href="cursos.html" target="_blank" rel="noopener noreferrer">Ver cursos</a></p>
+                <a href="cursos.html">Ver cursos</a>
             </div>
-            <div class="card card-mini">
-                <h3>Projetos</h3>
-                <p>Projetos de pesquisa, colaborações e iniciativas acadêmicas.</p>
-                <p><a href="projetos.html" target="_blank" rel="noopener noreferrer">Ver projetos</a></p>
-            </div>
-            <div class="card card-mini">
-                <h3>Downloads</h3>
-                <p>Instaladores e materiais para download.</p>
-                <p><a href="downloads.html" target="_blank" rel="noopener noreferrer">Ir para downloads</a></p>
-            </div>
-        </div>
-    </div>
 
-    <footer>© 2026 – Walderez Ramalho</footer>
+            <div class="card">
+                <h2>Projetos</h2>
+                <p>Projetos de pesquisa, colaborações e iniciativas acadêmicas.</p>
+                <a href="projetos.html">Ver projetos</a>
+            </div>
+
+            <div class="card">
+                <h2>Downloads</h2>
+                <p>Instaladores e materiais para download.</p>
+                <a href="downloads.html">Ir para downloads</a>
+            </div>
+
+            <div class="card">
+                <h2>Ferramentas</h2>
+                <p>Ferramentas digitais para ensino, pesquisa e organização acadêmica.</p>
+                <a href="ferramentas.html">Abrir ferramentas</a>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="site-footer">
+        © 2026 – Walderez Ramalho
+    </footer>
 
 </body>
 
