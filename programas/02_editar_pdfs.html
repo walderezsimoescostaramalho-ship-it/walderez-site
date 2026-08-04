@@ -1,0 +1,2185 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gerenciador de PDFs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b2a4a;
+    --ink-soft:#445070;
+    --paper:#faf8f4;
+    --paper-alt:#f1ede4;
+    --line:#dcd5c6;
+    --accent:#2d7d4f;
+    --accent-strong:#1d5239;
+    --udesc-blue:#0d4a8f;
+    --udesc-light:#e8f0f7;
+    --good:#3f6e52; --good-bg:#e8f0ea;
+    --warn:#a8492b; --warn-bg:#f7e9e3;
+    --white:#ffffff;
+    --radius:10px;
+    --font-display:'Source Serif 4', Georgia, serif;
+    --font-body:'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono:'IBM Plex Mono', ui-monospace, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body); font-size:14px; line-height:1.6;}
+
+  header.appbar{
+    background:linear-gradient(135deg, var(--udesc-blue) 0%, var(--accent) 100%);
+    color:var(--paper); padding:16px 24px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    border-bottom:4px solid var(--accent); position:sticky; top:0; z-index:400;
+    box-shadow:0 2px 8px rgba(13,74,143,.2);
+  }
+  header.appbar h1{font-family:var(--font-display); font-weight:600; font-size:20px; margin:0;}
+  header.appbar .sub{font-size:11.5px; opacity:.72; font-family:var(--font-mono);}
+  .appbar-controls{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+
+  button{
+    font-family:var(--font-body); font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:7px;
+    border:1px solid var(--line); background:var(--white); color:var(--ink); cursor:pointer;
+  }
+  button:hover{box-shadow:0 2px 6px rgba(0,0,0,.08);}
+  button.primary{background:var(--accent); border-color:var(--accent-strong); color:#fff;}
+  button.primary:hover{background:var(--accent-strong);}
+  button.primary:disabled{opacity:.5; cursor:not-allowed; box-shadow:none;}
+  button.ghost{background:transparent; border-color:rgba(255,255,255,.35); color:var(--paper);}
+  button.ghost:hover{background:rgba(255,255,255,.1);}
+  button.small{padding:4px 9px; font-size:11.5px;}
+  button.danger{color:var(--warn); border-color:var(--warn);}
+  button:disabled{opacity:.55; cursor:not-allowed;}
+
+  .layout{display:grid; grid-template-columns:260px 1fr; gap:0; align-items:start;}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr;} #toolNavCol{position:static; max-height:none;} }
+
+  /* ===== TOOL NAV ===== */
+  #toolNavCol{padding:18px 12px; max-height:calc(100vh - 64px); overflow-y:auto; border-right:1px solid var(--line); position:sticky; top:64px;}
+  #toolNavCol h2{font-family:var(--font-display); font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin:4px 8px 10px; font-weight:600;}
+  .tool-nav-item{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    padding:10px 12px; border-radius:8px; border:1px solid transparent; background:transparent;
+    color:var(--ink-soft); font-size:13px; font-weight:600; margin-bottom:4px;
+  }
+  .tool-nav-item .ico{font-size:15px; width:18px; text-align:center;}
+  .tool-nav-item:hover{background:var(--paper-alt); box-shadow:none;}
+  .tool-nav-item.active{background:var(--udesc-light); border-color:var(--udesc-blue); color:var(--udesc-blue);}
+  #toolNavCol .version{font-family:var(--font-mono); font-size:10.5px; color:var(--ink-soft); margin:14px 10px 0; opacity:.7;}
+
+  /* ===== WORKSPACE ===== */
+  #workspaceCol{padding:26px 34px 0; max-height:calc(100vh - 64px); overflow-y:auto; display:flex; flex-direction:column;}
+  #workspaceInner{flex:1;}
+  .tool-header h1{font-family:var(--font-display); font-size:23px; margin:0 0 4px; font-weight:600; color:var(--ink);}
+  .tool-header .desc{font-size:12.5px; color:var(--ink-soft); margin-bottom:18px;}
+
+  .tool-panel{display:none;}
+  .tool-panel.active{display:block;}
+
+  .panel{background:var(--white); border:1px solid var(--line); border-radius:var(--radius); margin-bottom:16px; overflow:hidden;}
+  .panel > .panel-head{display:flex; align-items:center; justify-content:space-between; padding:11px 15px; cursor:pointer; background:var(--paper-alt); border-bottom:2px solid var(--udesc-light); border-left:4px solid var(--accent);}
+  .panel > .panel-head h2{font-family:var(--font-display); font-size:14.5px; margin:0; font-weight:600; color:var(--udesc-blue);}
+  .panel > .panel-head .chevron{transition:transform .2s ease; color:var(--ink-soft); font-size:12px;}
+  .panel.collapsed > .panel-body{display:none;}
+  .panel.collapsed .chevron{transform:rotate(-90deg);}
+  .panel > .panel-body{padding:15px;}
+  .panel.static > .panel-head{cursor:default;}
+
+  .field{display:flex; flex-direction:column; gap:4px; margin-bottom:12px;}
+  .field label{font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); font-weight:600;}
+  .field input, .field select{font-family:var(--font-body); font-size:13px; padding:7px 9px; border:1px solid var(--line); border-radius:7px; background:var(--white); color:var(--ink); width:100%;}
+  .field-inline{display:flex; align-items:center; gap:8px; margin-bottom:9px; font-size:12.5px; color:var(--ink); font-weight:500;}
+  .field-inline input[type=checkbox], .field-inline input[type=radio]{width:auto; accent-color:var(--accent);}
+  .hint{font-size:11px; color:var(--ink-soft); margin-top:-4px; margin-bottom:10px; line-height:1.5;}
+  .row2{display:flex; gap:10px;}
+  .row2 > .field{flex:1;}
+  .radio-option{margin-bottom:10px;}
+  .radio-option .opt-desc{font-size:11px; color:var(--ink-soft); margin-left:24px; margin-top:1px;}
+  .sub-indent{margin-left:24px; padding-left:10px; border-left:2px solid var(--udesc-light);}
+
+  .file-row{display:flex; gap:8px; margin-bottom:12px;}
+  .file-row input[readonly]{background:var(--paper-alt); color:var(--ink-soft); cursor:default;}
+
+  .drop-zone{border:2px dashed var(--accent); border-radius:8px; padding:18px; text-align:center; cursor:pointer; background:var(--paper-alt); transition:all .2s ease; margin-bottom:12px;}
+  .drop-zone:hover{background:var(--udesc-light); border-color:var(--accent-strong);}
+  .drop-zone.active{background:var(--udesc-light); border-color:var(--accent-strong); box-shadow:0 0 0 3px rgba(45,125,79,.15);}
+  .drop-zone.has-file{border-style:solid;}
+  .drop-zone p{margin:0; color:var(--ink-soft); font-size:12px;}
+  .drop-zone .icon{font-size:26px; margin-bottom:6px;}
+  .drop-zone .fname{font-weight:600; color:var(--ink); font-size:13px; margin-bottom:2px;}
+
+  .btn-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;}
+
+  ul.file-list{list-style:none; margin:0 0 12px; padding:0; border:1px solid var(--line); border-radius:8px; max-height:220px; overflow-y:auto;}
+  ul.file-list li{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 10px; border-bottom:1px solid var(--line); font-size:12.5px;}
+  ul.file-list li:last-child{border-bottom:none;}
+  ul.file-list li:nth-child(odd){background:var(--paper-alt);}
+  ul.file-list .fl-name{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  ul.file-list .fl-actions{display:flex; gap:4px; flex-shrink:0;}
+  ul.file-list .fl-actions button{padding:2px 7px; font-size:11px;}
+  .file-list-empty{padding:16px; text-align:center; color:var(--ink-soft); font-size:12px;}
+
+  .result-banner{border-radius:8px; padding:12px 14px; margin:0 0 16px; font-size:13px; display:none; gap:10px; align-items:flex-start;}
+  .result-banner.show{display:flex;}
+  .result-banner.ok{background:var(--good-bg); border:1px solid #cfe4dc; color:var(--good);}
+  .result-banner.err{background:var(--warn-bg); border:1px solid #eccdbd; color:var(--warn);}
+  .result-banner .rb-icon{font-size:16px; line-height:1.3;}
+  .result-banner .rb-title{font-weight:700; margin-bottom:2px;}
+  .result-banner .rb-actions{margin-top:8px; display:flex; gap:8px;}
+
+  progress.op-progress{width:100%; height:8px; border-radius:99px; overflow:hidden; border:none; margin-bottom:14px; display:none;}
+  progress.op-progress.show{display:block;}
+  progress.op-progress::-webkit-progress-bar{background:#eee9de; border-radius:99px;}
+  progress.op-progress::-webkit-progress-value{background:var(--accent); border-radius:99px;}
+
+  .preview-box{border:1px solid var(--line); border-radius:8px; max-height:260px; overflow-y:auto; background:var(--white); padding:10px 12px; font-family:var(--font-mono); font-size:11.5px; white-space:pre-wrap; color:var(--ink-soft); margin-bottom:12px;}
+  .preview-box .anno-item{padding:6px 0; border-bottom:1px dashed var(--line); font-family:var(--font-body);}
+  .preview-box .anno-item:last-child{border-bottom:none;}
+  .anno-badge{display:inline-block; font-size:10px; font-weight:700; text-transform:uppercase; padding:1px 6px; border-radius:99px; background:var(--udesc-light); color:var(--udesc-blue); margin-right:6px;}
+
+  /* ===== LOG PANEL ===== */
+  #logPanel{position:sticky; bottom:0; background:var(--white); border:1px solid var(--line); border-radius:var(--radius) var(--radius) 0 0; margin-top:20px; box-shadow:0 -4px 14px rgba(0,0,0,.05);}
+  #logPanel .panel-head{border-radius:var(--radius) var(--radius) 0 0;}
+  #logHead{display:flex; align-items:center; justify-content:space-between; padding:10px 15px; cursor:pointer; background:var(--paper-alt); border-bottom:2px solid var(--udesc-light); border-left:4px solid var(--accent);}
+  #logHead h2{font-family:var(--font-display); font-size:13.5px; margin:0; font-weight:600; color:var(--udesc-blue);}
+  #logBody{max-height:150px; overflow-y:auto; padding:8px 15px; font-family:var(--font-mono); font-size:11.5px;}
+  #logPanel.collapsed #logBody{display:none;}
+  #logPanel.collapsed #logChevron{transform:rotate(-90deg);}
+  #logChevron{transition:transform .2s ease; color:var(--ink-soft); font-size:12px;}
+  .log-line{display:flex; gap:8px; padding:3px 0; color:var(--ink-soft);}
+  .log-line .dot{flex-shrink:0; width:7px; height:7px; border-radius:50%; margin-top:5px;}
+  .log-line.ok .dot{background:var(--good);}
+  .log-line.err .dot{background:var(--warn);}
+  .log-line.info .dot{background:var(--ink-soft);}
+  .log-line .ts{color:var(--ink-soft); opacity:.7; flex-shrink:0;}
+
+  .footer-note{max-width:1400px; margin:0 auto; padding:10px 24px 20px; font-size:11px; color:var(--ink-soft);}
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <div>
+    <h1>🗂️ Gerenciador de PDFs</h1>
+    <div class="sub">extrair · converter · OCR · mesclar · proteger · tabelas · renomear · anotações — tudo no navegador</div>
+  </div>
+  <div class="appbar-controls">
+    <span style="font-size:11px; opacity:.8;">v2.0.0 · web</span>
+  </div>
+</header>
+
+<div class="layout">
+  <div id="toolNavCol">
+    <h2>Ferramentas</h2>
+    <button class="tool-nav-item" data-tool="extrator"><span class="ico">📄</span> Extrair Páginas</button>
+    <button class="tool-nav-item" data-tool="markdown"><span class="ico">📝</span> PDF → Markdown</button>
+    <button class="tool-nav-item" data-tool="ocr"><span class="ico">🔎</span> OCR (Tesseract)</button>
+    <button class="tool-nav-item" data-tool="merger"><span class="ico">🧩</span> Mesclar PDFs</button>
+    <button class="tool-nav-item" data-tool="protector"><span class="ico">🔒</span> Protetor de PDF</button>
+    <button class="tool-nav-item" data-tool="table"><span class="ico">📊</span> Extrair Tabelas</button>
+    <button class="tool-nav-item" data-tool="renamer"><span class="ico">🏷️</span> Renomear em Lote</button>
+    <button class="tool-nav-item" data-tool="annotation"><span class="ico">💬</span> Leitor de Anotações</button>
+    <div class="version">Processamento 100% local no navegador — nenhum arquivo é enviado a servidores.</div>
+  </div>
+
+  <div id="workspaceCol">
+    <div id="workspaceInner">
+
+      <!-- ============ EXTRATOR ============ -->
+      <section class="tool-panel" id="panel-extrator" data-title="Extrair Páginas" data-desc="Extrair páginas específicas de um PDF">
+        <div class="result-banner" id="rb-extrator"></div>
+        <progress class="op-progress" id="prog-extrator" max="100" value="0"></progress>
+
+        <div class="panel static">
+          <div class="panel-head"><h2>Arquivo</h2></div>
+          <div class="panel-body">
+            <div class="drop-zone" id="dz-extrator" data-accept=".pdf">
+              <div class="icon">📄</div>
+              <div class="fname" id="dz-extrator-name">Clique ou arraste um PDF aqui</div>
+              <p>Selecionar arquivo PDF de origem</p>
+            </div>
+            <input type="file" accept="application/pdf" id="file-extrator" style="display:none;">
+
+            <div class="field">
+              <label>Páginas (ex: 1-5, 10, 15-20)</label>
+              <input type="text" id="ext-pages" placeholder="1-5, 10, 15-20">
+            </div>
+            <div class="field">
+              <label>Nome do arquivo de saída</label>
+              <input type="text" id="ext-output" value="extracted.pdf">
+            </div>
+            <button class="primary" style="width:100%;" id="btn-extrator" disabled>Extrair Páginas</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ MARKDOWN ============ -->
+      <section class="tool-panel" id="panel-markdown" data-title="PDF → Markdown" data-desc="Converter PDF para Markdown">
+        <div class="result-banner" id="rb-markdown"></div>
+        <progress class="op-progress" id="prog-markdown" max="100" value="0"></progress>
+
+        <div class="panel static">
+          <div class="panel-head"><h2>Arquivo</h2></div>
+          <div class="panel-body">
+            <div class="drop-zone" id="dz-markdown" data-accept=".pdf">
+              <div class="icon">📄</div>
+              <div class="fname" id="dz-markdown-name">Clique ou arraste um PDF aqui</div>
+              <p>Selecionar arquivo PDF de origem</p>
+            </div>
+            <input type="file" accept="application/pdf" id="file-markdown" style="display:none;">
+
+            <label class="field-inline"><input type="checkbox" id="md-toc" checked> Incluir índice</label>
+            <label class="field-inline"><input type="checkbox" id="md-images" checked> Extrair imagens</label>
+            <div class="hint">Detecção de tabelas é feita por heurística de posição de texto (agrupamento por linha/coluna) — pode não ser idêntica a ferramentas especializadas em tabelas complexas.</div>
+            <button class="primary" style="width:100%;" id="btn-markdown" disabled>Converter para Markdown</button>
+          </div>
+        </div>
+        <div class="preview-box" id="preview-markdown" style="display:none; max-height:340px;"></div>
+      </section>
+
+      <!-- ============ OCR ============ -->
+      <section class="tool-panel" id="panel-ocr" data-title="OCR (Tesseract)" data-desc="Extrair texto com OCR (Tesseract.js)">
+        <div class="result-banner" id="rb-ocr"></div>
+        <progress class="op-progress" id="prog-ocr" max="100" value="0"></progress>
+
+        <div class="panel static">
+          <div class="panel-head"><h2>Arquivo</h2></div>
+          <div class="panel-body">
+            <div class="drop-zone" id="dz-ocr" data-accept=".pdf">
+              <div class="icon">📄</div>
+              <div class="fname" id="dz-ocr-name">Clique ou arraste um PDF aqui</div>
+              <p>Selecionar arquivo PDF de origem</p>
+            </div>
+            <input type="file" accept="application/pdf" id="file-ocr" style="display:none;">
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Configurações</h2><span class="chevron">›</span></div>
+          <div class="panel-body">
+            <div class="field">
+              <label>DPI (150=rápido, 300=padrão, 600=melhor qualidade)</label>
+              <input type="number" id="ocr-dpi" value="300" min="150" max="600" step="50">
+            </div>
+            <div class="field">
+              <label>Idioma</label>
+              <select id="ocr-lang"></select>
+            </div>
+            <div class="hint">Na primeira vez, o modelo de idioma é baixado da internet (poucos MB) e fica em cache no navegador.</div>
+          </div>
+        </div>
+        <button class="primary" style="width:100%;" id="btn-ocr" disabled>Processar OCR</button>
+        <div class="preview-box" id="preview-ocr" style="display:none; max-height:340px; margin-top:12px;"></div>
+      </section>
+
+      <!-- ============ MERGER ============ -->
+      <section class="tool-panel" id="panel-merger" data-title="Mesclar PDFs" data-desc="Mesclar múltiplos PDFs em um único arquivo">
+        <div class="result-banner" id="rb-merger"></div>
+        <progress class="op-progress" id="prog-merger" max="100" value="0"></progress>
+
+        <div class="panel static">
+          <div class="panel-head"><h2>PDFs para mesclar</h2></div>
+          <div class="panel-body">
+            <ul class="file-list" id="merger-list"><li class="file-list-empty">Nenhum PDF adicionado</li></ul>
+            <input type="file" accept="application/pdf" id="file-merger" multiple style="display:none;">
+            <div class="btn-row">
+              <button id="btn-merger-add">+ Adicionar PDF(s)</button>
+              <button id="btn-merger-up">↑ Mover Cima</button>
+              <button id="btn-merger-down">↓ Mover Baixo</button>
+              <button id="btn-merger-clear" class="danger">Limpar</button>
+            </div>
+            <label class="field-inline"><input type="checkbox" id="merger-index"> Criar índice automático</label>
+            <div class="field">
+              <label>Nome do arquivo de saída</label>
+              <input type="text" id="merger-output" value="merged.pdf">
+            </div>
+            <button class="primary" style="width:100%;" id="btn-merger" disabled>Mesclar PDFs</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ PROTECTOR ============ -->
+      <section class="tool-panel" id="panel-protector" data-title="Protetor de PDF" data-desc="Proteger PDF com senha e restrições (criptografia RC4 padrão do PDF)">
+        <div class="result-banner" id="rb-protector"></div>
+        <progress class="op-progress" id="prog-protector" max="100" value="0"></progress>
+
+        <div class="panel static">
+          <div class="panel-head"><h2>Arquivo</h2></div>
+          <div class="panel-body">
+            <div class="drop-zone" id="dz-protector" data-accept=".pdf">
+              <div class="icon">📄</div>
+              <div class="fname" id="dz-protector-name">Clique ou arraste um PDF aqui</div>
+              <p>Selecionar arquivo PDF de origem</p>
+            </div>
+            <input type="file" accept="application/pdf" id="file-protector" style="display:none;">
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Proteção</h2><span class="chevron">›</span></div>
+          <div class="panel-body">
+            <label class="field-inline"><input type="checkbox" id="prot-user-check"> Proteger com senha de usuário (necessária para abrir)</label>
+            <div class="sub-indent" id="prot-user-fields" style="display:none;">
+              <div class="row2">
+                <div class="field"><label>Senha</label><input type="password" id="prot-user-pass"></div>
+                <div class="field"><label>Confirmar</label><input type="password" id="prot-user-conf"></div>
+              </div>
+            </div>
+            <label class="field-inline"><input type="checkbox" id="prot-owner-check"> Proteger com senha de proprietário (para modificar permissões)</label>
+            <div class="sub-indent" id="prot-owner-fields" style="display:none;">
+              <div class="field"><label>Senha de proprietário</label><input type="password" id="prot-owner-pass"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Permissões</h2><span class="chevron">›</span></div>
+          <div class="panel-body">
+            <label class="field-inline"><input type="checkbox" id="prot-print" checked> Permitir impressão</label>
+            <label class="field-inline"><input type="checkbox" id="prot-copy" checked> Permitir cópia</label>
+            <label class="field-inline"><input type="checkbox" id="prot-edit"> Permitir edição</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Nome do arquivo de saída</label>
+          <input type="text" id="prot-output" value="protected.pdf">
+        </div>
+        <button class="primary" style="width:100%;" id="btn-protector" disabled>Proteger PDF</button>
+
+        <div class="panel static" style="margin-top:22px;">
+          <div class="panel-head"><h2>Desproteger</h2></div>
+          <div class="panel-body">
+            <div class="drop-zone" id="dz-unprotector" data-accept=".pdf">
+              <div class="icon">🔓</div>
+              <div class="fname" id="dz-unprotector-name">Clique ou arraste um PDF protegido aqui</div>
+              <p>Selecionar arquivo PDF protegido</p>
+            </div>
+            <input type="file" accept="application/pdf" id="file-unprotector" style="display:none;">
+            <div class="field">
+              <label>Senha (usuário ou proprietário)</label>
+              <input type="password" id="unprot-pass">
+            </div>
+            <div class="field">
+              <label>Nome do arquivo de saída</label>
+              <input type="text" id="unprot-output" value="unprotected.pdf">
+            </div>
+            <button style="width:100%;" id="btn-unprotector" disabled>Remover Proteção</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ TABLE EXTRACTOR ============ -->
+      <section class="tool-panel" id="panel-table" data-title="Extrair Tabelas" data-desc="Extrair tabelas de PDF e salvar em Excel">
+        <div class="result-banner" id="rb-table"></div>
+        <progress class="op-progress" id="prog-table" max="100" value="0"></progress>
+
+        <div class="panel static">
+          <div class="panel-head"><h2>Arquivo</h2></div>
+          <div class="panel-body">
+            <div class="drop-zone" id="dz-table" data-accept=".pdf">
+              <div class="icon">📄</div>
+              <div class="fname" id="dz-table-name">Clique ou arraste um PDF aqui</div>
+              <p>Selecionar arquivo PDF de origem</p>
+            </div>
+            <input type="file" accept="application/pdf" id="file-table" style="display:none;">
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Intervalo de Páginas</h2><span class="chevron">›</span></div>
+          <div class="panel-body">
+            <label class="field-inline"><input type="checkbox" id="table-all-pages" checked> Todas as páginas</label>
+            <div class="row2" id="table-pages-range" style="display:none;">
+              <div class="field"><label>Página inicial</label><input type="number" id="table-start" value="1" min="1"></div>
+              <div class="field"><label>Página final</label><input type="number" id="table-end" value="1" min="1"></div>
+            </div>
+          </div>
+        </div>
+        <label class="field-inline"><input type="checkbox" id="table-format" checked> Aplicar formatação</label>
+        <div class="field">
+          <label>Nome do arquivo de saída</label>
+          <input type="text" id="table-output" value="tabelas.xlsx">
+        </div>
+        <button class="primary" style="width:100%;" id="btn-table" disabled>Extrair Tabelas</button>
+      </section>
+
+      <!-- ============ RENAMER ============ -->
+      <section class="tool-panel" id="panel-renamer" data-title="Renomear em Lote" data-desc="Renomear múltiplos PDFs com diferentes estratégias">
+        <div class="result-banner" id="rb-renamer"></div>
+        <progress class="op-progress" id="prog-renamer" max="100" value="0"></progress>
+
+        <div class="panel static">
+          <div class="panel-head"><h2>PDFs</h2></div>
+          <div class="panel-body">
+            <div class="drop-zone" id="dz-renamer" data-accept=".pdf">
+              <div class="icon">🏷️</div>
+              <div class="fname" id="dz-renamer-name">Clique ou arraste um ou mais PDFs aqui</div>
+              <p>Selecionar arquivos PDF (ordem = ordem de seleção)</p>
+            </div>
+            <input type="file" accept="application/pdf" id="file-renamer" multiple style="display:none;">
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Estratégia de Renomeação</h2><span class="chevron">›</span></div>
+          <div class="panel-body">
+            <div class="radio-option">
+              <label class="field-inline"><input type="radio" name="rename-strategy" value="sequencial" checked> Sequencial (prefixo_001.pdf)</label>
+              <div class="sub-indent"><div class="field" style="max-width:220px;"><label>Prefixo</label><input type="text" id="rename-prefix" value="documento"></div></div>
+            </div>
+            <div class="radio-option">
+              <label class="field-inline"><input type="radio" name="rename-strategy" value="por_data"> Por Data (YYYYMMDD_nome.pdf)</label>
+              <div class="opt-desc">Usa a data da última modificação do arquivo</div>
+            </div>
+            <div class="radio-option">
+              <label class="field-inline"><input type="radio" name="rename-strategy" value="por_conteudo"> Por Conteúdo (primeira linha)</label>
+              <div class="opt-desc">Usa a primeira linha de texto extraída da página 1</div>
+            </div>
+            <div class="radio-option">
+              <label class="field-inline"><input type="radio" name="rename-strategy" value="conteudo_sequencial"> Conteúdo + Sequencial (título_001.pdf)</label>
+            </div>
+          </div>
+        </div>
+
+        <label class="field-inline"><input type="checkbox" id="rename-dry-run" checked> Simular primeiro (Dry Run)</label>
+
+        <div class="panel static">
+          <div class="panel-head"><h2>Preview das Renomeações</h2></div>
+          <div class="panel-body">
+            <ul class="file-list" id="rename-preview-list"><li class="file-list-empty">Gere um preview para ver os novos nomes</li></ul>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button id="btn-rename-preview">Gerar Preview</button>
+          <button id="btn-rename-clear">Limpar Preview</button>
+        </div>
+        <button class="primary" style="width:100%;" id="btn-renamer" disabled>Aplicar Renomeações (baixar .zip)</button>
+        <button style="width:100%; margin-top:8px; display:none;" id="btn-renamer-fsapi" disabled>📁 Salvar cópias renomeadas direto em uma pasta (Chrome/Edge)</button>
+        <div class="hint">O arquivo original nunca é apagado ou modificado — o resultado é sempre uma cópia com o novo nome (em .zip, ou opcionalmente gravada em uma pasta escolhida).</div>
+      </section>
+
+      <!-- ============ ANNOTATION READER ============ -->
+      <section class="tool-panel" id="panel-annotation" data-title="Leitor de Anotações" data-desc="Extrair anotações, destaques e comentários de PDFs">
+        <div class="result-banner" id="rb-annotation"></div>
+        <progress class="op-progress" id="prog-annotation" max="100" value="0"></progress>
+
+        <div class="panel static">
+          <div class="panel-head"><h2>Arquivo</h2></div>
+          <div class="panel-body">
+            <div class="drop-zone" id="dz-annotation" data-accept=".pdf">
+              <div class="icon">📄</div>
+              <div class="fname" id="dz-annotation-name">Clique ou arraste um PDF aqui</div>
+              <p>Selecionar arquivo PDF de origem</p>
+            </div>
+            <input type="file" accept="application/pdf" id="file-annotation" style="display:none;">
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Tipos de anotações</h2><span class="chevron">›</span></div>
+          <div class="panel-body">
+            <label class="field-inline"><input type="checkbox" id="anno-comentarios" checked> Comentários</label>
+            <label class="field-inline"><input type="checkbox" id="anno-destaques" checked> Destaques</label>
+            <label class="field-inline"><input type="checkbox" id="anno-sublinhado" checked> Sublinhado</label>
+            <label class="field-inline"><input type="checkbox" id="anno-tudo"> Tudo (todos os tipos, sem filtro)</label>
+          </div>
+        </div>
+        <label class="field-inline"><input type="checkbox" id="anno-include-page" checked> Incluir número de página</label>
+        <div class="field">
+          <label>Nome do arquivo de saída</label>
+          <input type="text" id="anno-output" value="anotacoes.md">
+        </div>
+        <button class="primary" style="width:100%;" id="btn-annotation" disabled>Extrair Anotações</button>
+
+        <div class="panel static" style="margin-top:16px;">
+          <div class="panel-head"><h2>Anotações Encontradas</h2></div>
+          <div class="panel-body">
+            <div class="preview-box" id="preview-annotation" style="margin-bottom:0;">Nenhuma extração realizada ainda.</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ============ LOG ============ -->
+    <div id="logPanel">
+      <div id="logHead">
+        <h2>Log de Atividade</h2>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button class="small" id="btn-log-clear" type="button">✕ Limpar</button>
+          <span id="logChevron">›</span>
+        </div>
+      </div>
+      <div id="logBody"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer-note">Gerenciador de PDFs — versão web (HTML único), portada da versão Python/Tkinter original. Todo o processamento acontece localmente no navegador; bibliotecas de terceiros (pdf-lib, pdf.js, Tesseract.js, ExcelJS, JSZip) são carregadas via CDN na primeira vez que a página é aberta.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+
+/* ======================================================================
+   UTILITÁRIOS COMPARTILHADOS
+   ====================================================================== */
+
+function logMsg(msg, kind){
+  kind = kind || 'info';
+  const body = document.getElementById('logBody');
+  const now = new Date();
+  const ts = now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  const line = document.createElement('div');
+  line.className = 'log-line ' + kind;
+  line.innerHTML = '<span class="dot"></span><span class="ts">' + ts + '</span><span class="msg"></span>';
+  line.querySelector('.msg').textContent = msg;
+  body.insertBefore(line, body.firstChild);
+}
+
+function showResult(toolId, ok, title, detail, downloadFn, downloadLabel){
+  const rb = document.getElementById('rb-' + toolId);
+  rb.className = 'result-banner show ' + (ok ? 'ok' : 'err');
+  rb.innerHTML = '';
+  const icon = document.createElement('div');
+  icon.className = 'rb-icon';
+  icon.textContent = ok ? '✅' : '⚠️';
+  const body = document.createElement('div');
+  body.style.flex = '1';
+  const t = document.createElement('div');
+  t.className = 'rb-title';
+  t.textContent = title;
+  body.appendChild(t);
+  if (detail){
+    const d = document.createElement('div');
+    d.textContent = detail;
+    body.appendChild(d);
+  }
+  if (ok && downloadFn){
+    const actions = document.createElement('div');
+    actions.className = 'rb-actions';
+    const btn = document.createElement('button');
+    btn.className = 'primary small';
+    btn.textContent = downloadLabel || '⬇ Baixar resultado';
+    btn.onclick = downloadFn;
+    actions.appendChild(btn);
+    body.appendChild(actions);
+  }
+  rb.appendChild(icon);
+  rb.appendChild(body);
+  logMsg(title + (detail ? (' — ' + detail) : ''), ok ? 'ok' : 'err');
+}
+
+function setProgress(toolId, pct, indeterminate){
+  const p = document.getElementById('prog-' + toolId);
+  if (pct === null){ p.classList.remove('show'); return; }
+  p.classList.add('show');
+  if (indeterminate){ p.removeAttribute('value'); }
+  else { p.value = pct; }
+}
+
+function downloadBytes(bytes, filename, mime){
+  const blob = new Blob([bytes], {type: mime || 'application/octet-stream'});
+  saveAs(blob, filename);
+}
+
+function downloadText(text, filename, mime){
+  const blob = new Blob([text], {type: (mime || 'text/plain') + ';charset=utf-8'});
+  saveAs(blob, filename);
+}
+
+async function fileToBytes(file){
+  const buf = await file.arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+/* Parser de intervalo de páginas: "1-5, 10, 15-20" -> array de índices 0-based, ordenado */
+function parsePageRanges(pagesStr, totalPages){
+  const pages = new Set();
+  const parts = pagesStr.split(',');
+  for (let raw of parts){
+    const part = raw.trim();
+    if (!part) continue;
+    if (part.includes('-')){
+      const [a, b] = part.split('-').map(s => s.trim());
+      const start = parseInt(a, 10) - 1;
+      const end = parseInt(b, 10);
+      if (isNaN(start) || isNaN(end) || start < 0 || end > totalPages || start >= end){
+        throw new Error('Formato inválido ou fora do intervalo (1-' + totalPages + '): ' + part);
+      }
+      for (let i = start; i < end; i++) pages.add(i);
+    } else {
+      const n = parseInt(part, 10) - 1;
+      if (isNaN(n) || n < 0 || n >= totalPages){
+        throw new Error('Página fora do intervalo (1-' + totalPages + '): ' + part);
+      }
+      pages.add(n);
+    }
+  }
+  return Array.from(pages).sort((x, y) => x - y);
+}
+
+function sanitizeFilename(name){
+  name = name.replace(/[<>:"/\\|?*]/g, '');
+  name = name.trim().replace(/\s+/g, ' ');
+  return name.slice(0, 200);
+}
+
+/* ===== Drop zone genérica ===== */
+function setupDropzone(dzId, inputId, onFiles, opts){
+  opts = opts || {};
+  const dz = document.getElementById(dzId);
+  const input = document.getElementById(inputId);
+  dz.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => { if (input.files.length) onFiles(input.files); });
+  dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('active'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('active'));
+  dz.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dz.classList.remove('active');
+    if (e.dataTransfer.files.length) onFiles(e.dataTransfer.files);
+  });
+}
+
+function setDropzoneFile(dzId, nameElId, file){
+  document.getElementById(dzId).classList.add('has-file');
+  document.getElementById(nameElId).textContent = file.name;
+}
+
+/* ===== Navegação entre ferramentas ===== */
+const toolTitleEl = null;
+function switchTool(toolId){
+  document.querySelectorAll('.tool-nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tool === toolId);
+  });
+  document.querySelectorAll('.tool-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === 'panel-' + toolId);
+  });
+}
+document.querySelectorAll('.tool-nav-item').forEach(btn => {
+  btn.addEventListener('click', () => switchTool(btn.dataset.tool));
+});
+switchTool('extrator');
+
+/* ===== Painéis colapsáveis ===== */
+document.querySelectorAll('.panel:not(.static) > .panel-head').forEach(head => {
+  head.addEventListener('click', () => head.parentElement.classList.toggle('collapsed'));
+});
+document.getElementById('logHead').addEventListener('click', () => {
+  document.getElementById('logPanel').classList.toggle('collapsed');
+});
+document.getElementById('btn-log-clear').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('logBody').innerHTML = '';
+});
+
+logMsg('Aplicativo carregado. Todas as operações rodam localmente no navegador.', 'info');
+
+/* ======================================================================
+   EXTRATOR DE PÁGINAS
+   ====================================================================== */
+(function(){
+  let currentFile = null;
+
+  setupDropzone('dz-extrator', 'file-extrator', (files) => {
+    currentFile = files[0];
+    setDropzoneFile('dz-extrator', 'dz-extrator-name', currentFile);
+    const stem = currentFile.name.replace(/\.pdf$/i, '');
+    document.getElementById('ext-output').value = stem + '_extraido.pdf';
+    updateBtn();
+  });
+
+  function updateBtn(){
+    const pages = document.getElementById('ext-pages').value.trim();
+    document.getElementById('btn-extrator').disabled = !(currentFile && pages);
+  }
+  document.getElementById('ext-pages').addEventListener('input', updateBtn);
+
+  document.getElementById('btn-extrator').addEventListener('click', async () => {
+    const pagesStr = document.getElementById('ext-pages').value.trim();
+    let outName = document.getElementById('ext-output').value.trim() || 'extracted.pdf';
+    if (!outName.toLowerCase().endsWith('.pdf')) outName += '.pdf';
+
+    setProgress('extrator', null, true);
+    logMsg('Processando: ' + currentFile.name, 'info');
+    try{
+      const bytes = await fileToBytes(currentFile);
+      const srcDoc = await PDFLib.PDFDocument.load(bytes);
+      const total = srcDoc.getPageCount();
+      logMsg('Total de páginas: ' + total, 'info');
+
+      const pageIndexes = parsePageRanges(pagesStr, total);
+      logMsg('Páginas a extrair: ' + pageIndexes.map(p => p + 1).join(', '), 'info');
+
+      const outDoc = await PDFLib.PDFDocument.create();
+      const copied = await outDoc.copyPages(srcDoc, pageIndexes);
+      copied.forEach(p => outDoc.addPage(p));
+
+      const outBytes = await outDoc.save();
+      setProgress('extrator', null);
+      showResult('extrator', true, 'PDF salvo: ' + outName, pageIndexes.length + ' página(s) extraída(s)',
+        () => downloadBytes(outBytes, outName, 'application/pdf'));
+    } catch(e){
+      setProgress('extrator', null);
+      showResult('extrator', false, 'Erro ao extrair páginas', e.message);
+    }
+  });
+})();
+
+/* ======================================================================
+   MESCLAR PDFs
+   ====================================================================== */
+(function(){
+  let items = []; // {file, name}
+  let selectedIdx = null;
+
+  function renderList(){
+    const ul = document.getElementById('merger-list');
+    ul.innerHTML = '';
+    if (!items.length){
+      ul.innerHTML = '<li class="file-list-empty">Nenhum PDF adicionado</li>';
+    } else {
+      items.forEach((it, idx) => {
+        const li = document.createElement('li');
+        if (idx === selectedIdx) li.style.outline = '2px solid var(--udesc-blue)';
+        li.innerHTML = '<span class="fl-name"></span><span class="fl-actions"><button class="fl-remove" data-idx="' + idx + '">✕</button></span>';
+        li.querySelector('.fl-name').textContent = (idx+1) + '. ' + it.file.name;
+        li.addEventListener('click', (e) => {
+          if (e.target.closest('.fl-remove')) return;
+          selectedIdx = (selectedIdx === idx) ? null : idx;
+          renderList();
+        });
+        ul.appendChild(li);
+      });
+    }
+    ul.querySelectorAll('.fl-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.idx, 10);
+        items.splice(idx, 1);
+        selectedIdx = null;
+        renderList();
+        updateBtn();
+      });
+    });
+    updateBtn();
+  }
+
+  function updateBtn(){
+    document.getElementById('btn-merger').disabled = items.length === 0;
+  }
+
+  document.getElementById('btn-merger-add').addEventListener('click', () => {
+    document.getElementById('file-merger').click();
+  });
+  document.getElementById('file-merger').addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(f => items.push({file: f}));
+    if (files.length){
+      const stem = files[files.length-1].name.replace(/\.pdf$/i, '');
+      document.getElementById('merger-output').value = 'merged.pdf';
+    }
+    renderList();
+    e.target.value = '';
+  });
+
+  document.getElementById('btn-merger-up').addEventListener('click', () => {
+    if (selectedIdx === null || selectedIdx === 0) return;
+    const i = selectedIdx;
+    [items[i-1], items[i]] = [items[i], items[i-1]];
+    selectedIdx = i - 1;
+    renderList();
+  });
+  document.getElementById('btn-merger-down').addEventListener('click', () => {
+    if (selectedIdx === null || selectedIdx === items.length - 1) return;
+    const i = selectedIdx;
+    [items[i], items[i+1]] = [items[i+1], items[i]];
+    selectedIdx = i + 1;
+    renderList();
+  });
+  document.getElementById('btn-merger-clear').addEventListener('click', () => {
+    items = [];
+    selectedIdx = null;
+    renderList();
+  });
+
+  document.getElementById('btn-merger').addEventListener('click', async () => {
+    let outName = document.getElementById('merger-output').value.trim() || 'merged.pdf';
+    if (!outName.toLowerCase().endsWith('.pdf')) outName += '.pdf';
+    const criarIndice = document.getElementById('merger-index').checked;
+
+    setProgress('merger', null, true);
+    try{
+      logMsg('Iniciando merge de ' + items.length + ' arquivo(s)', 'info');
+      const outDoc = await PDFLib.PDFDocument.create();
+
+      let indexEntries = [];
+      if (criarIndice){
+        // Precisamos contar páginas de cada PDF antes de montar o índice
+        for (const it of items){
+          const bytes = await fileToBytes(it.file);
+          const doc = await PDFLib.PDFDocument.load(bytes);
+          indexEntries.push({name: it.file.name.replace(/\.pdf$/i, ''), pages: doc.getPageCount()});
+          it._bytes = bytes; // cache para reaproveitar
+        }
+        const font = await outDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+        const fontRegular = await outDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+        const idxPage = outDoc.addPage([612, 792]); // letter
+        idxPage.drawText('INDICE', {x: 50, y: 750, size: 16, font: font});
+        let y = 720;
+        let pageStart = 1;
+        for (const entry of indexEntries){
+          const pageEnd = pageStart + entry.pages - 1;
+          const line = entry.name.padEnd(50, ' ') + 'p. ' + pageStart + '-' + pageEnd;
+          idxPage.drawText(line, {x: 50, y: y, size: 11, font: fontRegular});
+          pageStart = pageEnd + 1;
+          y -= 20;
+          if (y < 50){ y = 750; }
+        }
+        logMsg('Índice adicionado', 'info');
+      }
+
+      let idx = 0;
+      for (const it of items){
+        idx++;
+        const bytes = it._bytes || await fileToBytes(it.file);
+        const doc = await PDFLib.PDFDocument.load(bytes);
+        logMsg('Mesclando PDF ' + idx + '/' + items.length + ': ' + it.file.name + ' (' + doc.getPageCount() + ' páginas)', 'info');
+        const pages = await outDoc.copyPages(doc, doc.getPageIndices());
+        pages.forEach(p => outDoc.addPage(p));
+      }
+
+      const outBytes = await outDoc.save();
+      setProgress('merger', null);
+      showResult('merger', true, 'PDF mesclado salvo: ' + outName, 'Total de páginas: ' + outDoc.getPageCount(),
+        () => downloadBytes(outBytes, outName, 'application/pdf'));
+    } catch(e){
+      setProgress('merger', null);
+      showResult('merger', false, 'Erro ao mesclar PDFs', e.message);
+    }
+  });
+})();
+
+/* ======================================================================
+   LEITOR DE ANOTAÇÕES
+   ====================================================================== */
+(function(){
+  let currentFile = null;
+
+  const TYPE_MAP = {
+    'Text': 'Comentário',
+    'Highlight': 'Destaque',
+    'Underline': 'Sublinhado',
+    'StrikeOut': 'Riscado',
+    'FreeText': 'Texto Livre',
+    'Square': 'Caixa',
+    'Circle': 'Círculo',
+    'Line': 'Linha',
+    'Ink': 'Desenho',
+    'Link': 'Link',
+  };
+  // pdf.js AnnotationType -> nome do subtipo PDF (equivalente ao /Subtype do objeto)
+  const PDFJS_TYPE_NAMES = {
+    1: 'Text', 2: 'Link', 3: 'FreeText', 4: 'Line', 5: 'Square', 6: 'Circle',
+    7: 'Polygon', 8: 'PolyLine', 9: 'Highlight', 10: 'Underline', 11: 'Squiggly',
+    12: 'StrikeOut', 13: 'Stamp', 14: 'Caret', 15: 'Ink', 16: 'Popup',
+    17: 'FileAttachment', 18: 'Sound', 19: 'Movie', 20: 'Widget', 21: 'Screen',
+    22: 'PrinterMark', 23: 'TrapNet', 24: 'Watermark', 25: '3D', 26: 'Redact',
+  };
+
+  setupDropzone('dz-annotation', 'file-annotation', (files) => {
+    currentFile = files[0];
+    setDropzoneFile('dz-annotation', 'dz-annotation-name', currentFile);
+    document.getElementById('anno-output').value = 'anotacoes.md';
+    document.getElementById('btn-annotation').disabled = false;
+  });
+
+  document.getElementById('anno-tudo').addEventListener('change', (e) => {
+    const v = e.target.checked;
+    document.getElementById('anno-comentarios').checked = v;
+    document.getElementById('anno-destaques').checked = v;
+    document.getElementById('anno-sublinhado').checked = v;
+  });
+
+  function formatPdfDate(dateStr){
+    if (!dateStr) return 'N/A';
+    // formato pdf.js: D:20240115120000Z ou similar
+    const m = /D:(\d{4})(\d{2})(\d{2})/.exec(dateStr);
+    if (!m) return 'N/A';
+    return m[3] + '/' + m[2] + '/' + m[1];
+  }
+
+  async function extrairAnotacoes(bytes){
+    const loadingTask = pdfjsLib.getDocument({data: bytes});
+    const pdf = await loadingTask.promise;
+    const anotacoes = [];
+    const total = pdf.numPages;
+    for (let i = 1; i <= total; i++){
+      logMsg('Lendo página ' + i + '/' + total, 'info');
+      const page = await pdf.getPage(i);
+      const annots = await page.getAnnotations({intent: 'display'});
+      for (const a of annots){
+        const subtype = PDFJS_TYPE_NAMES[a.annotationType] || a.subtype || 'Desconhecido';
+        if (!['Text','Highlight','Underline','StrikeOut','FreeText'].includes(subtype) && subtype !== a.subtype) {
+          // fallback: alguns builds do pdf.js expõem a.subtype como string direta
+        }
+        const realSubtype = a.subtype || subtype;
+        const tipoLegivel = TYPE_MAP[realSubtype] || realSubtype;
+        const conteudoStr = (a.contentsObj && a.contentsObj.str) || a.contents || '';
+        anotacoes.push({
+          pagina: i,
+          tipo: realSubtype,
+          tipo_legivel: tipoLegivel,
+          conteudo: conteudoStr.trim() ? conteudoStr.trim() : 'N/A',
+          autor: (a.titleObj && a.titleObj.str) ? a.titleObj.str : (a.title || 'Desconhecido'),
+          data: formatPdfDate(a.modificationDate),
+        });
+      }
+    }
+    return anotacoes;
+  }
+
+  function gerarMarkdown(anotacoes, includePage){
+    if (!anotacoes.length) return '# Anotações\n\nNenhuma anotação encontrada.\n';
+    const now = new Date();
+    let md = '# Anotações do PDF\n\n';
+    md += '**Data de extração:** ' + now.toLocaleString('pt-BR') + '\n';
+    md += '**Total de anotações:** ' + anotacoes.length + '\n\n';
+
+    const contagem = {};
+    anotacoes.forEach(a => contagem[a.tipo_legivel] = (contagem[a.tipo_legivel] || 0) + 1);
+    md += '## Resumo\n\n';
+    Object.keys(contagem).sort().forEach(t => md += '- **' + t + ':** ' + contagem[t] + '\n');
+    md += '\n';
+
+    const porPagina = {};
+    anotacoes.forEach(a => { (porPagina[a.pagina] = porPagina[a.pagina] || []).push(a); });
+
+    Object.keys(porPagina).map(Number).sort((a,b)=>a-b).forEach(pagina => {
+      if (includePage) md += '## Página ' + pagina + '\n\n';
+      porPagina[pagina].forEach(a => {
+        md += '### [' + a.tipo_legivel + ']\n\n';
+        if (a.autor !== 'Desconhecido') md += '**Autor:** ' + a.autor + '  \n';
+        if (a.data !== 'N/A') md += '**Data:** ' + a.data + '  \n';
+        if (a.conteudo !== 'N/A') md += '> ' + a.conteudo + '\n';
+        md += '\n';
+      });
+    });
+    return md;
+  }
+
+  function gerarTexto(anotacoes, includePage){
+    if (!anotacoes.length) return 'ANOTACOES\n\nNenhuma anotacao encontrada.\n';
+    const now = new Date();
+    let txt = 'ANOTACOES DO PDF\n';
+    txt += 'Data de extracao: ' + now.toLocaleString('pt-BR') + '\n';
+    txt += 'Total de anotacoes: ' + anotacoes.length + '\n' + '='.repeat(80) + '\n\n';
+
+    const contagem = {};
+    anotacoes.forEach(a => contagem[a.tipo_legivel] = (contagem[a.tipo_legivel] || 0) + 1);
+    txt += 'RESUMO\n';
+    Object.keys(contagem).sort().forEach(t => txt += '- ' + t + ': ' + contagem[t] + '\n');
+    txt += '\n' + '='.repeat(80) + '\n\n';
+
+    const porPagina = {};
+    anotacoes.forEach(a => { (porPagina[a.pagina] = porPagina[a.pagina] || []).push(a); });
+    Object.keys(porPagina).map(Number).sort((a,b)=>a-b).forEach(pagina => {
+      if (includePage){ txt += 'PAGINA ' + pagina + '\n' + '-'.repeat(40) + '\n'; }
+      porPagina[pagina].forEach(a => {
+        txt += '\n[' + a.tipo_legivel + ']\n';
+        if (a.autor !== 'Desconhecido') txt += 'Autor: ' + a.autor + '\n';
+        if (a.data !== 'N/A') txt += 'Data: ' + a.data + '\n';
+        if (a.conteudo !== 'N/A') txt += 'Conteudo: ' + a.conteudo + '\n';
+        txt += '\n';
+      });
+    });
+    return txt;
+  }
+
+  document.getElementById('btn-annotation').addEventListener('click', async () => {
+    let outName = document.getElementById('anno-output').value.trim() || 'anotacoes.md';
+    const isMarkdown = outName.toLowerCase().endsWith('.md') || !outName.toLowerCase().endsWith('.txt');
+    if (!/\.(md|txt)$/i.test(outName)) outName += '.md';
+
+    const tipos = [];
+    if (document.getElementById('anno-comentarios').checked) tipos.push('Comentário');
+    if (document.getElementById('anno-destaques').checked) tipos.push('Destaque');
+    if (document.getElementById('anno-sublinhado').checked) tipos.push('Sublinhado');
+    const tudo = document.getElementById('anno-tudo').checked;
+    const includePage = document.getElementById('anno-include-page').checked;
+
+    if (!tudo && tipos.length === 0){
+      showResult('annotation', false, 'Selecione pelo menos um tipo de anotação');
+      return;
+    }
+
+    setProgress('annotation', null, true);
+    try{
+      logMsg('Arquivo: ' + currentFile.name, 'info');
+      const bytes = await fileToBytes(currentFile);
+      let anotacoes = await extrairAnotacoes(bytes);
+      logMsg('Total: ' + anotacoes.length + ' anotações encontradas', 'info');
+
+      if (!tudo){
+        anotacoes = anotacoes.filter(a => tipos.includes(a.tipo_legivel));
+        logMsg('Filtradas: ' + anotacoes.length + ' anotações (filtro aplicado)', 'info');
+      }
+
+      const conteudo = isMarkdown ? gerarMarkdown(anotacoes, includePage) : gerarTexto(anotacoes, includePage);
+
+      const previewEl = document.getElementById('preview-annotation');
+      previewEl.innerHTML = '';
+      if (!anotacoes.length){
+        previewEl.textContent = 'Nenhuma anotação encontrada.';
+      } else {
+        anotacoes.slice(0, 50).forEach(a => {
+          const div = document.createElement('div');
+          div.className = 'anno-item';
+          const badge = document.createElement('span');
+          badge.className = 'anno-badge';
+          badge.textContent = a.tipo_legivel;
+          div.appendChild(badge);
+          const span = document.createElement('span');
+          span.textContent = 'p.' + a.pagina + ' — ' + (a.conteudo !== 'N/A' ? a.conteudo : '(sem conteúdo textual)');
+          div.appendChild(span);
+          previewEl.appendChild(div);
+        });
+      }
+
+      setProgress('annotation', null);
+      showResult('annotation', true, 'Anotações extraídas com sucesso', anotacoes.length + ' anotação(ões) — arquivo: ' + outName,
+        () => downloadText(conteudo, outName, isMarkdown ? 'text/markdown' : 'text/plain'));
+    } catch(e){
+      setProgress('annotation', null);
+      showResult('annotation', false, 'Erro ao extrair anotações', e.message);
+    }
+  });
+})();
+
+/* ======================================================================
+   PDF -> MARKDOWN
+   (heurística de linhas/colunas via pdf.js — sem equivalente a pdfplumber
+   em JS, então a detecção de tabelas é aproximada)
+   ====================================================================== */
+const PDFTextHeuristics = (function(){
+
+  async function extractPageLines(page){
+    const content = await page.getTextContent();
+    const items = content.items.filter(it => it.str !== undefined && it.str !== '');
+    const lines = [];
+    const tol = 2.5;
+    items.forEach(it => {
+      const x = it.transform[4], y = it.transform[5];
+      let line = lines.find(l => Math.abs(l.y - y) <= tol);
+      if (!line){ line = {y, items: []}; lines.push(line); }
+      line.items.push({x, str: it.str, width: it.width || (it.str.length * (it.height||8) * 0.5)});
+    });
+    lines.sort((a, b) => b.y - a.y);
+    lines.forEach(l => l.items.sort((a, b) => a.x - b.x));
+    return lines;
+  }
+
+  /* pdf.js costuma sintetizar um item "espaço" cobrindo toda a lacuna entre
+     duas palavras distantes (largura grande). Isso é usado tanto para juntar
+     o texto da linha quanto para detectar colunas de tabela. */
+  const WHITESPACE_GAP_PT = 9;
+
+  function lineToText(line){
+    let out = '';
+    line.items.forEach((it, idx) => {
+      if (it.str.trim() === ''){
+        if (out && !out.endsWith(' ')) out += ' ';
+      } else {
+        out += it.str;
+      }
+    });
+    return out.trim();
+  }
+
+  /* Quebra a linha em "células" sempre que encontra um item de espaço largo */
+  function splitIntoCells(line){
+    const cells = [];
+    let current = '';
+    line.items.forEach(it => {
+      const isWideGap = it.str.trim() === '' && it.width > WHITESPACE_GAP_PT;
+      if (isWideGap){
+        if (current.trim()) cells.push(current.trim());
+        else if (cells.length) cells.push('');
+        current = '';
+      } else if (it.str.trim() === ''){
+        if (current && !current.endsWith(' ')) current += ' ';
+      } else {
+        current += it.str;
+      }
+    });
+    if (current.trim()) cells.push(current.trim());
+    return cells;
+  }
+
+  /* Linha é candidata a "linha de tabela" se tiver pelo menos uma lacuna larga
+     (típico de colunas alinhadas) separando 2+ células de conteúdo. */
+  function isTableRow(line){
+    const hasWideGap = line.items.some(it => it.str.trim() === '' && it.width > WHITESPACE_GAP_PT);
+    if (!hasWideGap) return false;
+    return splitIntoCells(line).length >= 2;
+  }
+
+  function clusterColumns(rows){
+    const cellRows = rows.map(splitIntoCells);
+    const maxCols = Math.max(...cellRows.map(r => r.length));
+    return cellRows.map(r => {
+      const padded = r.slice(0, maxCols);
+      while (padded.length < maxCols) padded.push('');
+      return padded;
+    });
+  }
+
+  function gridToMarkdownTable(grid){
+    if (!grid.length) return '';
+    const clean = grid.map(row => row.map(c => (c || '').replace(/\s+/g, ' ').trim()));
+    const lines = [];
+    lines.push('| ' + clean[0].join(' | ') + ' |');
+    lines.push('|' + clean[0].map(() => '---').join('|') + '|');
+    for (let i = 1; i < clean.length; i++){
+      lines.push('| ' + clean[i].join(' | ') + ' |');
+    }
+    return lines.join('\n');
+  }
+
+  /* Extrai da página: parágrafos de texto (com heurística de título) + tabelas em markdown */
+  function detectTitleLevel(texto){
+    if (/^[A-ZÁÉÍÓÚÂÊÔ0-9\s]{2,100}$/.test(texto)){
+      const wordCount = texto.split(/\s+/).filter(Boolean).length;
+      if (wordCount <= 10) return 2;
+    }
+    if (/^\d+\.?\d*\s+[A-ZÀ-Ú]/.test(texto)) return 3;
+    return 0;
+  }
+
+  function limparTexto(texto){
+    texto = texto.replace(/\s+/g, ' ').trim();
+    return texto;
+  }
+
+  async function analisarPagina(page){
+    const lines = await extractPageLines(page);
+    const blocks = []; // {type:'text'|'table', ...}
+    let i = 0;
+    let textBuffer = [];
+    let prevY = null;
+    const ys = lines.map(l => l.y);
+    const gaps = [];
+    for (let k = 1; k < ys.length; k++) gaps.push(Math.abs(ys[k-1] - ys[k]));
+    gaps.sort((a,b) => a-b);
+    const medianGap = gaps.length ? gaps[Math.floor(gaps.length/2)] : 14;
+
+    function flushText(){
+      if (textBuffer.length){
+        blocks.push({type: 'text', text: textBuffer.join(' ')});
+        textBuffer = [];
+      }
+    }
+
+    while (i < lines.length){
+      const line = lines[i];
+      if (isTableRow(line)){
+        // Agrupa linhas consecutivas de tabela
+        const tableRows = [line];
+        let j = i + 1;
+        while (j < lines.length && isTableRow(lines[j])){
+          tableRows.push(lines[j]);
+          j++;
+        }
+        flushText();
+        const grid = clusterColumns(tableRows);
+        blocks.push({type: 'table', markdown: gridToMarkdownTable(grid), grid: grid});
+        i = j;
+        continue;
+      }
+
+      const text = lineToText(line);
+      if (text){
+        if (prevY !== null && medianGap > 0 && Math.abs(prevY - line.y) > medianGap * 1.7){
+          flushText();
+        }
+        textBuffer.push(text);
+      }
+      prevY = line.y;
+      i++;
+    }
+    flushText();
+    return blocks;
+  }
+
+  return { analisarPagina, detectTitleLevel, limparTexto, extractPageLines, lineToText };
+})();
+
+(function(){
+  let currentFile = null;
+
+  setupDropzone('dz-markdown', 'file-markdown', (files) => {
+    currentFile = files[0];
+    setDropzoneFile('dz-markdown', 'dz-markdown-name', currentFile);
+    document.getElementById('btn-markdown').disabled = false;
+  });
+
+  document.getElementById('btn-markdown').addEventListener('click', async () => {
+    const incluirToc = document.getElementById('md-toc').checked;
+    const stem = currentFile.name.replace(/\.pdf$/i, '');
+    const outName = stem + '.md';
+
+    setProgress('markdown', null, true);
+    try{
+      logMsg('Convertendo: ' + currentFile.name, 'info');
+      const bytes = await fileToBytes(currentFile);
+      const pdf = await pdfjsLib.getDocument({data: bytes}).promise;
+      const total = pdf.numPages;
+
+      const paginas = [];
+      let totalTabelas = 0;
+      for (let p = 1; p <= total; p++){
+        logMsg('Página ' + p + '/' + total + '...', 'info');
+        const page = await pdf.getPage(p);
+        const blocks = await PDFTextHeuristics.analisarPagina(page);
+        const paragrafos = [];
+        const tabelas = [];
+        blocks.forEach(b => {
+          if (b.type === 'text'){
+            const texto = PDFTextHeuristics.limparTexto(b.text);
+            if (texto) paragrafos.push({texto, nivel: PDFTextHeuristics.detectTitleLevel(texto)});
+          } else if (b.type === 'table'){
+            tabelas.push(b.markdown);
+            totalTabelas++;
+          }
+        });
+        paginas.push({numero: p, paragrafos, tabelas});
+      }
+
+      let md = '# PDF Convertido para Markdown\n\n';
+      md += '**Data:** ' + new Date().toLocaleString('pt-BR') + '\n\n';
+      md += '**Total de páginas:** ' + total + '\n\n';
+      if (totalTabelas) md += '**Tabelas:** ' + totalTabelas + '\n\n';
+      md += '---\n\n';
+
+      if (incluirToc && paginas.length > 1){
+        md += '## Índice\n\n';
+        for (let i = 0; i < paginas.length; i++) md += '- [Página ' + (i+1) + '](#página-' + (i+1) + ')\n';
+        md += '\n---\n\n';
+      }
+
+      paginas.forEach(pag => {
+        md += '## Página ' + pag.numero + '\n\n';
+        pag.paragrafos.forEach(par => {
+          if (par.nivel > 0){
+            md += '#'.repeat(par.nivel + 1) + ' ' + par.texto + '\n\n';
+          } else {
+            md += par.texto + '\n\n';
+          }
+        });
+        pag.tabelas.forEach(t => { md += t + '\n\n'; });
+        md += '---\n\n';
+      });
+
+      document.getElementById('preview-markdown').style.display = 'block';
+      document.getElementById('preview-markdown').textContent = md.slice(0, 4000) + (md.length > 4000 ? '\n\n… (prévia truncada)' : '');
+
+      setProgress('markdown', null);
+      showResult('markdown', true, 'Markdown gerado: ' + outName, total + ' página(s), ' + totalTabelas + ' tabela(s) detectada(s)',
+        () => downloadText(md, outName, 'text/markdown'));
+    } catch(e){
+      setProgress('markdown', null);
+      showResult('markdown', false, 'Erro ao converter para Markdown', e.message);
+    }
+  });
+})();
+
+/* ======================================================================
+   EXTRAIR TABELAS -> EXCEL
+   ====================================================================== */
+(function(){
+  let currentFile = null;
+
+  setupDropzone('dz-table', 'file-table', (files) => {
+    currentFile = files[0];
+    setDropzoneFile('dz-table', 'dz-table-name', currentFile);
+    document.getElementById('btn-table').disabled = false;
+  });
+
+  document.getElementById('table-all-pages').addEventListener('change', (e) => {
+    document.getElementById('table-pages-range').style.display = e.target.checked ? 'none' : 'flex';
+  });
+
+  function applyHeaderStyle(cell){
+    cell.font = {bold: true, size: 11};
+    cell.fill = {type: 'pattern', pattern: 'solid', fgColor: {argb: 'FFD3D3D3'}};
+    cell.border = {top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'}};
+  }
+  function applyCellBorder(cell){
+    cell.border = {top:{style:'thin'}, left:{style:'thin'}, bottom:{style:'thin'}, right:{style:'thin'}};
+  }
+
+  document.getElementById('btn-table').addEventListener('click', async () => {
+    let outName = document.getElementById('table-output').value.trim() || 'tabelas.xlsx';
+    if (!outName.toLowerCase().endsWith('.xlsx')) outName += '.xlsx';
+    const comFormatacao = document.getElementById('table-format').checked;
+    const allPages = document.getElementById('table-all-pages').checked;
+
+    setProgress('table', null, true);
+    try{
+      logMsg('Processando: ' + currentFile.name, 'info');
+      const bytes = await fileToBytes(currentFile);
+      const pdf = await pdfjsLib.getDocument({data: bytes}).promise;
+      const total = pdf.numPages;
+
+      let pageRange;
+      if (allPages){
+        pageRange = Array.from({length: total}, (_, i) => i + 1);
+      } else {
+        const start = parseInt(document.getElementById('table-start').value, 10);
+        const end = parseInt(document.getElementById('table-end').value, 10);
+        if (!start || !end || start < 1 || end < start){
+          throw new Error('Intervalo de páginas inválido');
+        }
+        pageRange = [];
+        for (let p = start; p <= Math.min(end, total); p++) pageRange.push(p);
+      }
+
+      logMsg('Extraindo tabelas...', 'info');
+      const tabelas = [];
+      for (const p of pageRange){
+        logMsg('Analisando página ' + p + '/' + total + '...', 'info');
+        const page = await pdf.getPage(p);
+        const blocks = await PDFTextHeuristics.analisarPagina(page);
+        blocks.filter(b => b.type === 'table').forEach(b => {
+          tabelas.push({pagina: p, numero: tabelas.length + 1, grid: b.grid});
+        });
+      }
+
+      if (!tabelas.length){
+        setProgress('table', null);
+        showResult('table', false, 'Nenhuma tabela encontrada no PDF');
+        return;
+      }
+      logMsg(tabelas.length + ' tabela(s) encontrada(s)', 'info');
+
+      const workbook = new ExcelJS.Workbook();
+      const resumo = workbook.addWorksheet('Resumo');
+      resumo.getColumn(1).width = 30;
+      resumo.getColumn(2).width = 15;
+      resumo.getCell('A1').value = 'Total de Tabelas';
+      resumo.getCell('B1').value = tabelas.length;
+      applyHeaderStyle(resumo.getCell('A1'));
+      tabelas.forEach((t, idx) => {
+        resumo.getCell('A' + (idx+2)).value = 'Tabela ' + t.numero;
+        resumo.getCell('B' + (idx+2)).value = 'Pagina ' + t.pagina;
+      });
+
+      tabelas.forEach(t => {
+        logMsg('Processando Tabela ' + t.numero + ' (página ' + t.pagina + ')...', 'info');
+        const sheet = workbook.addWorksheet('Tabela ' + t.numero);
+        const grid = t.grid;
+        const numCols = grid[0] ? grid[0].length : 0;
+
+        grid.forEach((row, rIdx) => {
+          row.forEach((val, cIdx) => {
+            const cell = sheet.getCell(rIdx + 1, cIdx + 1);
+            cell.value = val;
+            if (comFormatacao){
+              if (rIdx === 0) applyHeaderStyle(cell);
+              else applyCellBorder(cell);
+            }
+          });
+        });
+
+        if (comFormatacao){
+          for (let c = 1; c <= numCols; c++){
+            let maxW = 0;
+            grid.forEach(row => { maxW = Math.max(maxW, String(row[c-1] || '').length); });
+            sheet.getColumn(c).width = Math.min(maxW + 2, 50);
+          }
+          sheet.views = [{state: 'frozen', ySplit: 1}];
+        }
+      });
+
+      const outBuf = await workbook.xlsx.writeBuffer();
+      setProgress('table', null);
+      showResult('table', true, 'Excel salvo: ' + outName, tabelas.length + ' tabela(s) em ' + (tabelas.length + 1) + ' sheet(s)',
+        () => downloadBytes(outBuf, outName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
+    } catch(e){
+      setProgress('table', null);
+      showResult('table', false, 'Erro ao extrair tabelas', e.message);
+    }
+  });
+})();
+
+/* ======================================================================
+   OCR (Tesseract.js)
+   ====================================================================== */
+(function(){
+  let currentFile = null;
+  const IDIOMA_MAP = {
+    'Português': 'por',
+    'Inglês': 'eng',
+    'Espanhol': 'spa',
+    'Francês': 'fra',
+    'Alemão': 'deu',
+    'Italiano': 'ita',
+    'Chinês Simplificado': 'chi_sim',
+    'Português + Inglês': 'por+eng',
+  };
+  const sel = document.getElementById('ocr-lang');
+  Object.keys(IDIOMA_MAP).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+
+  setupDropzone('dz-ocr', 'file-ocr', (files) => {
+    currentFile = files[0];
+    setDropzoneFile('dz-ocr', 'dz-ocr-name', currentFile);
+    document.getElementById('btn-ocr').disabled = false;
+  });
+
+  document.getElementById('btn-ocr').addEventListener('click', async () => {
+    const dpi = parseInt(document.getElementById('ocr-dpi').value, 10) || 300;
+    const idiomaNome = sel.value;
+    const idiomaCodigo = IDIOMA_MAP[idiomaNome] || 'por';
+    const stem = currentFile.name.replace(/\.pdf$/i, '');
+    const outName = stem + '_ocr.txt';
+
+    setProgress('ocr', 0);
+    let worker = null;
+    try{
+      logMsg('Processando: ' + currentFile.name, 'info');
+      logMsg('DPI: ' + dpi + ' | Idioma: ' + idiomaCodigo, 'info');
+
+      const bytes = await fileToBytes(currentFile);
+      const pdf = await pdfjsLib.getDocument({data: bytes}).promise;
+      const total = pdf.numPages;
+
+      logMsg('Carregando modelo de OCR (' + idiomaCodigo + ')… pode levar alguns segundos na primeira vez', 'info');
+      worker = await Tesseract.createWorker(idiomaCodigo);
+
+      logMsg('Processando ' + total + ' página(s)...', 'info');
+      let textoCompleto = '';
+      const scale = dpi / 72;
+
+      for (let p = 1; p <= total; p++){
+        logMsg('OCR página ' + p + '/' + total + '...', 'info');
+        const page = await pdf.getPage(p);
+        const viewport = page.getViewport({scale});
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const ctx = canvas.getContext('2d');
+        await page.render({canvasContext: ctx, viewport}).promise;
+
+        try{
+          const { data } = await worker.recognize(canvas);
+          textoCompleto += '\n--- PÁGINA ' + p + ' ---\n' + data.text + '\n';
+          logMsg('  ✓ página ' + p, 'ok');
+        } catch(errPage){
+          textoCompleto += '\n--- PÁGINA ' + p + ' ---\nERRO: ' + errPage.message + '\n';
+          logMsg('  ✗ página ' + p + ': ' + errPage.message, 'err');
+        }
+        setProgress('ocr', Math.round((p / total) * 100));
+      }
+
+      await worker.terminate();
+      worker = null;
+
+      document.getElementById('preview-ocr').style.display = 'block';
+      document.getElementById('preview-ocr').textContent = textoCompleto.slice(0, 4000) + (textoCompleto.length > 4000 ? '\n\n… (prévia truncada)' : '');
+
+      setProgress('ocr', null);
+      showResult('ocr', true, 'Arquivo TXT salvo: ' + outName, total + ' página(s) processada(s)',
+        () => downloadText(textoCompleto, outName, 'text/plain'));
+    } catch(e){
+      if (worker){ try{ await worker.terminate(); }catch(_){} }
+      setProgress('ocr', null);
+      showResult('ocr', false, 'Erro ao processar OCR', e.message);
+    }
+  });
+})();
+
+/* ======================================================================
+   CRIPTOGRAFIA DO PDF (Standard Security Handler — RC4, PDF32000-1:2008)
+   Implementação própria a partir da especificação pública do formato PDF,
+   já que não existe biblioteca JS de navegador madura para isto.
+   Referências: PDF32000-1:2008 §7.6 — Algoritmos 2, 3, 3a/7, 4/5, 6.
+   ====================================================================== */
+const PDFCrypto = (function(){
+
+  /* ---------- MD5 (implementação de domínio público, RFC 1321) ---------- */
+  function md5(bytes){
+    function rotl(x, c){ return (x << c) | (x >>> (32 - c)); }
+    function addU32(a, b){ return (a + b) | 0; }
+
+    const s = [7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,
+               5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,
+               4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,
+               6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21];
+    const K = new Int32Array(64);
+    for (let i = 0; i < 64; i++) K[i] = (Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296)) | 0;
+
+    let a0 = 0x67452301, b0 = 0xefcdab89, c0 = 0x98badcfe, d0 = 0x10325476;
+
+    const origLen = bytes.length;
+    const bitLenLow = (origLen * 8) >>> 0;
+    const bitLenHigh = Math.floor(origLen / 536870912); // (origLen*8) / 2^32, safe for our sizes
+
+    let totalLen = origLen + 1;
+    while (totalLen % 64 !== 56) totalLen++;
+    const msg = new Uint8Array(totalLen + 8);
+    msg.set(bytes);
+    msg[origLen] = 0x80;
+    // length in bits, little-endian 64-bit
+    const dv = new DataView(msg.buffer);
+    dv.setUint32(totalLen, bitLenLow, true);
+    dv.setUint32(totalLen + 4, bitLenHigh, true);
+
+    for (let chunkStart = 0; chunkStart < msg.length; chunkStart += 64){
+      const M = new Int32Array(16);
+      for (let i = 0; i < 16; i++){
+        M[i] = dv.getUint32(chunkStart + i * 4, true);
+      }
+      let A = a0, B = b0, C = c0, D = d0;
+      for (let i = 0; i < 64; i++){
+        let F, g;
+        if (i < 16){ F = (B & C) | (~B & D); g = i; }
+        else if (i < 32){ F = (D & B) | (~D & C); g = (5 * i + 1) % 16; }
+        else if (i < 48){ F = B ^ C ^ D; g = (3 * i + 5) % 16; }
+        else { F = C ^ (B | ~D); g = (7 * i) % 16; }
+        F = (F + A + K[i] + M[g]) | 0;
+        A = D; D = C; C = B;
+        B = (B + rotl(F, s[i])) | 0;
+      }
+      a0 = addU32(a0, A); b0 = addU32(b0, B); c0 = addU32(c0, C); d0 = addU32(d0, D);
+    }
+
+    const out = new Uint8Array(16);
+    const outDv = new DataView(out.buffer);
+    outDv.setUint32(0, a0 >>> 0, true);
+    outDv.setUint32(4, b0 >>> 0, true);
+    outDv.setUint32(8, c0 >>> 0, true);
+    outDv.setUint32(12, d0 >>> 0, true);
+    return out;
+  }
+
+  /* ---------- RC4 (simétrico: mesma função cifra/decifra) ---------- */
+  function rc4(key, data){
+    const S = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) S[i] = i;
+    let j = 0;
+    for (let i = 0; i < 256; i++){
+      j = (j + S[i] + key[i % key.length]) & 0xFF;
+      const tmp = S[i]; S[i] = S[j]; S[j] = tmp;
+    }
+    const out = new Uint8Array(data.length);
+    let i = 0; j = 0;
+    for (let k = 0; k < data.length; k++){
+      i = (i + 1) & 0xFF;
+      j = (j + S[i]) & 0xFF;
+      const tmp = S[i]; S[i] = S[j]; S[j] = tmp;
+      out[k] = data[k] ^ S[(S[i] + S[j]) & 0xFF];
+    }
+    return out;
+  }
+
+  const PAD = new Uint8Array([
+    0x28,0xBF,0x4E,0x5E,0x4E,0x75,0x8A,0x41,
+    0x64,0x00,0x4E,0x56,0xFF,0xFA,0x01,0x08,
+    0x2E,0x2E,0x00,0xB6,0xD0,0x68,0x3E,0x80,
+    0x2F,0x0C,0xA9,0xFE,0x64,0x53,0x69,0x7A,
+  ]);
+
+  function concatBytes(...arrs){
+    const total = arrs.reduce((sum, a) => sum + a.length, 0);
+    const out = new Uint8Array(total);
+    let off = 0;
+    arrs.forEach(a => { out.set(a, off); off += a.length; });
+    return out;
+  }
+
+  function padPassword(pwBytes){
+    if (pwBytes.length >= 32) return pwBytes.slice(0, 32);
+    return concatBytes(pwBytes, PAD.slice(0, 32 - pwBytes.length));
+  }
+
+  function bytesToHex(bytes){
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  function hexToBytes(hex){
+    const out = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+    return out;
+  }
+  function bytesEqual(a, b){
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+
+  function int32ToLEBytes(n){
+    const out = new Uint8Array(4);
+    const u = n >>> 0;
+    out[0] = u & 0xFF; out[1] = (u >>> 8) & 0xFF; out[2] = (u >>> 16) & 0xFF; out[3] = (u >>> 24) & 0xFF;
+    return out;
+  }
+
+  /* Algoritmo 2 — deriva a chave de arquivo a partir da senha de usuário */
+  function computeEncryptionKey(userPwBytes, O, P, idBytes, keyLenBytes, R){
+    const input = concatBytes(padPassword(userPwBytes), O.slice(0, 32), int32ToLEBytes(P), idBytes);
+    let key = md5(input);
+    if (R >= 3){
+      for (let i = 0; i < 50; i++) key = md5(key.slice(0, keyLenBytes));
+    }
+    return key.slice(0, keyLenBytes);
+  }
+
+  /* Algoritmo 3 — calcula o valor /O */
+  function computeO(ownerPwBytes, userPwBytes, keyLenBytes, R){
+    const pwForKey = (ownerPwBytes && ownerPwBytes.length) ? ownerPwBytes : userPwBytes;
+    let key = md5(padPassword(pwForKey));
+    if (R >= 3){
+      for (let i = 0; i < 50; i++) key = md5(key.slice(0, keyLenBytes));
+    }
+    const rc4key = key.slice(0, keyLenBytes);
+    let enc = rc4(rc4key, padPassword(userPwBytes));
+    if (R >= 3){
+      for (let i = 1; i <= 19; i++){
+        const roundKey = rc4key.map(b => b ^ i);
+        enc = rc4(roundKey, enc);
+      }
+    }
+    return enc; // 32 bytes
+  }
+
+  /* Algoritmo 4/5 — calcula o valor /U */
+  function computeU(fileKey, idBytes, R){
+    if (R === 2){
+      return rc4(fileKey, PAD);
+    }
+    let enc = rc4(fileKey, md5(concatBytes(PAD, idBytes)));
+    for (let i = 1; i <= 19; i++){
+      const roundKey = fileKey.map(b => b ^ i);
+      enc = rc4(roundKey, enc);
+    }
+    return concatBytes(enc, new Uint8Array(16)); // 32 bytes (16 úteis + 16 de padding)
+  }
+
+  /* Algoritmo 6 — autentica com senha de usuário; retorna a chave de arquivo ou null */
+  function authUserPassword(pwBytes, ctx){
+    const fileKey = computeEncryptionKey(pwBytes, ctx.O, ctx.P, ctx.idBytes, ctx.keyLenBytes, ctx.R);
+    const computedU = computeU(fileKey, ctx.idBytes, ctx.R);
+    const match = (ctx.R === 2)
+      ? bytesEqual(computedU, ctx.U)
+      : bytesEqual(computedU.slice(0, 16), ctx.U.slice(0, 16));
+    return match ? fileKey : null;
+  }
+
+  /* Algoritmo 7 — autentica com senha de proprietário (recupera a senha de usuário e valida) */
+  function authOwnerPassword(pwBytes, ctx){
+    let key = md5(padPassword(pwBytes));
+    if (ctx.R >= 3){
+      for (let i = 0; i < 50; i++) key = md5(key.slice(0, ctx.keyLenBytes));
+    }
+    const rc4key = key.slice(0, ctx.keyLenBytes);
+    let data = ctx.O.slice(0, 32);
+    if (ctx.R >= 3){
+      for (let i = 19; i >= 0; i--){
+        const roundKey = rc4key.map(b => b ^ i);
+        data = rc4(roundKey, data);
+      }
+    } else {
+      data = rc4(rc4key, data);
+    }
+    return authUserPassword(data, ctx);
+  }
+
+  /* Chave derivada por objeto (Algoritmo 1) */
+  function perObjectKey(fileKey, objNum, genNum){
+    const ext = concatBytes(
+      fileKey,
+      new Uint8Array([objNum & 0xFF, (objNum >> 8) & 0xFF, (objNum >> 16) & 0xFF]),
+      new Uint8Array([genNum & 0xFF, (genNum >> 8) & 0xFF])
+    );
+    const hash = md5(ext);
+    const n = Math.min(fileKey.length + 5, 16);
+    return hash.slice(0, n);
+  }
+
+  return {
+    md5, rc4, PAD, padPassword, concatBytes, bytesToHex, hexToBytes, bytesEqual,
+    computeEncryptionKey, computeO, computeU, authUserPassword, authOwnerPassword, perObjectKey,
+  };
+})();
+
+/* ======================================================================
+   PROTETOR DE PDF (usa PDFCrypto acima + acesso de baixo nível ao pdf-lib)
+   ====================================================================== */
+const PDFProtectorImpl = (function(){
+  const KEY_LEN_BYTES = 16; // 128-bit RC4 (V2/R3) — compatível com praticamente todo leitor de PDF
+  const R = 3, V = 2;
+  const RESERVED_ONES = 0xFFFFF0C0; // bits 7,8 e 13-32 devem ser 1 (P32000-1:2008 Tabela 22)
+
+  function calcularPermissionsFlag(permitirImpressao, permitirCopia, permitirEdicao){
+    let flags = 0;
+    if (permitirImpressao) flags |= 4 | 2048;
+    if (permitirEdicao || permitirCopia) flags |= 8 | 16 | 32 | 256 | 512 | 1024;
+    if (permitirEdicao) flags |= 8 | 32 | 256 | 1024;
+    return (flags | RESERVED_ONES) | 0;
+  }
+
+  /* Percorre recursivamente dicts/arrays (sem seguir PDFRef) encriptando strings folha */
+  function walkAndTransformStrings(node, transformFn){
+    if (node instanceof PDFLib.PDFDict){
+      for (const [key, val] of node.entries()){
+        if (val instanceof PDFLib.PDFString || val instanceof PDFLib.PDFHexString){
+          try{
+            const bytes = val.asBytes();
+            const out = transformFn(bytes);
+            node.set(key, PDFLib.PDFHexString.of(PDFCrypto.bytesToHex(out)));
+          } catch(_e){ /* melhor esforço: mantém a string original em caso de falha */ }
+        } else if (val instanceof PDFLib.PDFDict || val instanceof PDFLib.PDFArray){
+          walkAndTransformStrings(val, transformFn);
+        }
+      }
+    } else if (node instanceof PDFLib.PDFArray){
+      for (let i = 0; i < node.size(); i++){
+        const val = node.get(i);
+        if (val instanceof PDFLib.PDFString || val instanceof PDFLib.PDFHexString){
+          try{
+            const bytes = val.asBytes();
+            const out = transformFn(bytes);
+            node.set(i, PDFLib.PDFHexString.of(PDFCrypto.bytesToHex(out)));
+          } catch(_e){ /* melhor esforço */ }
+        } else if (val instanceof PDFLib.PDFDict || val instanceof PDFLib.PDFArray){
+          walkAndTransformStrings(val, transformFn);
+        }
+      }
+    }
+  }
+
+  /* Aplica RC4 (cifra OU decifra — é simétrico) em todos os streams e strings
+     de todos os objetos indiretos do documento, usando a chave por-objeto. */
+  function transformAllObjects(context, fileKey){
+    for (const [ref, obj] of context.enumerateIndirectObjects()){
+      const objKey = PDFCrypto.perObjectKey(fileKey, ref.objectNumber, ref.generationNumber);
+      if (obj instanceof PDFLib.PDFRawStream){
+        obj.contents = PDFCrypto.rc4(objKey, obj.contents);
+        walkAndTransformStrings(obj.dict, (bytes) => PDFCrypto.rc4(objKey, bytes));
+      } else if (obj instanceof PDFLib.PDFDict || obj instanceof PDFLib.PDFArray){
+        walkAndTransformStrings(obj, (bytes) => PDFCrypto.rc4(objKey, bytes));
+      }
+    }
+  }
+
+  function getIdBytes(context){
+    const existing = context.trailerInfo.ID;
+    if (existing && existing instanceof PDFLib.PDFArray && existing.size() > 0){
+      try{ return existing.get(0).asBytes(); } catch(_e){ /* cai para gerar novo */ }
+    }
+    return crypto.getRandomValues(new Uint8Array(16));
+  }
+
+  async function proteger(bytes, opts){
+    const doc = await PDFLib.PDFDocument.load(bytes);
+    const context = doc.context;
+    const enc = new TextEncoder();
+    const userPwBytes = enc.encode(opts.senhaUsuario || '');
+    const ownerPwBytes = enc.encode(opts.senhaProprietario || '');
+    const P = calcularPermissionsFlag(opts.permitirImpressao, opts.permitirCopia, opts.permitirEdicao);
+    const idBytes = getIdBytes(context);
+
+    const O = PDFCrypto.computeO(ownerPwBytes, userPwBytes, KEY_LEN_BYTES, R);
+    const fileKey = PDFCrypto.computeEncryptionKey(userPwBytes, O, P, idBytes, KEY_LEN_BYTES, R);
+    const U = PDFCrypto.computeU(fileKey, idBytes, R);
+
+    transformAllObjects(context, fileKey);
+
+    const encDict = context.obj({
+      Filter: PDFLib.PDFName.of('Standard'),
+      V, R,
+      O: PDFLib.PDFHexString.of(PDFCrypto.bytesToHex(O)),
+      U: PDFLib.PDFHexString.of(PDFCrypto.bytesToHex(U)),
+      P,
+      Length: KEY_LEN_BYTES * 8,
+    });
+    context.trailerInfo.Encrypt = context.register(encDict);
+    context.trailerInfo.ID = context.obj([
+      PDFLib.PDFHexString.of(PDFCrypto.bytesToHex(idBytes)),
+      PDFLib.PDFHexString.of(PDFCrypto.bytesToHex(idBytes)),
+    ]);
+
+    return await doc.save({useObjectStreams: false});
+  }
+
+  async function desproteger(bytes, senha){
+    const doc = await PDFLib.PDFDocument.load(bytes, {ignoreEncryption: true});
+    const context = doc.context;
+    const encRef = context.trailerInfo.Encrypt;
+    if (!encRef) throw new Error('PDF nao é protegido');
+    const encDict = context.lookup(encRef);
+    if (!(encDict instanceof PDFLib.PDFDict)) throw new Error('PDF nao é protegido');
+
+    const filterName = encDict.get(PDFLib.PDFName.of('Filter'));
+    if (!filterName || filterName.toString() !== '/Standard'){
+      throw new Error('Método de proteção não suportado (apenas Standard Security Handler)');
+    }
+    const rVal = encDict.get(PDFLib.PDFName.of('R')).asNumber();
+    const oBytes = encDict.get(PDFLib.PDFName.of('O')).asBytes();
+    const uBytes = encDict.get(PDFLib.PDFName.of('U')).asBytes();
+    const pVal = encDict.get(PDFLib.PDFName.of('P')).asNumber();
+    const lengthBits = encDict.has(PDFLib.PDFName.of('Length')) ? encDict.get(PDFLib.PDFName.of('Length')).asNumber() : 40;
+    const keyLenBytes = Math.floor(lengthBits / 8);
+
+    if (rVal > 4){
+      throw new Error('PDF usa criptografia AES (R' + rVal + '), não suportada por esta ferramenta (apenas RC4/Standard R2-R4)');
+    }
+
+    const idArr = context.trailerInfo.ID;
+    const idBytes = (idArr && idArr.size && idArr.size() > 0) ? idArr.get(0).asBytes() : new Uint8Array(0);
+
+    const ctx = {O: oBytes, U: uBytes, P: pVal, idBytes, keyLenBytes, R: rVal};
+    const enc = new TextEncoder();
+    const pwBytes = enc.encode(senha || '');
+
+    let fileKey = PDFCrypto.authUserPassword(pwBytes, ctx);
+    if (!fileKey) fileKey = PDFCrypto.authOwnerPassword(pwBytes, ctx);
+    if (!fileKey) throw new Error('Senha incorreta');
+
+    transformAllObjects(context, fileKey);
+    context.trailerInfo.Encrypt = undefined;
+
+    return await doc.save({useObjectStreams: false});
+  }
+
+  return { proteger, desproteger };
+})();
+
+/* ======================================================================
+   RENOMEAR EM LOTE
+   ====================================================================== */
+(function(){
+  let files = []; // File[]
+  let lastPreview = null; // {preview, conflitos}
+
+  setupDropzone('dz-renamer', 'file-renamer', (fl) => {
+    files = Array.from(fl).sort((a, b) => a.name.localeCompare(b.name));
+    document.getElementById('dz-renamer-name').textContent = files.length + ' PDF(s) selecionado(s)';
+    document.getElementById('dz-renamer').classList.add('has-file');
+    document.getElementById('btn-renamer').disabled = true;
+    document.getElementById('btn-renamer-fsapi').disabled = true;
+    lastPreview = null;
+    renderPreview(null);
+  });
+
+  document.querySelectorAll('input[name=rename-strategy]').forEach(r => {
+    r.addEventListener('change', () => {
+      lastPreview = null;
+      document.getElementById('btn-renamer').disabled = true;
+      document.getElementById('btn-renamer-fsapi').disabled = true;
+      renderPreview(null);
+    });
+  });
+
+  function renderPreview(data){
+    const ul = document.getElementById('rename-preview-list');
+    ul.innerHTML = '';
+    if (!data || !data.preview.length){
+      ul.innerHTML = '<li class="file-list-empty">Gere um preview para ver os novos nomes</li>';
+      return;
+    }
+    data.preview.forEach(item => {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      name.className = 'fl-name';
+      name.textContent = (item.original === item.novo) ? item.original : (item.original + '  →  ' + item.novo);
+      li.appendChild(name);
+      ul.appendChild(li);
+    });
+    if (data.conflitos.length){
+      const li = document.createElement('li');
+      li.style.color = 'var(--warn)';
+      li.style.fontWeight = '600';
+      li.textContent = '⚠ Conflitos de nome detectados: ' + data.conflitos.join(', ');
+      ul.appendChild(li);
+    }
+  }
+
+  function pad3(n){ return String(n).padStart(3, '0'); }
+
+  function formatDateYYYYMMDD(ts){
+    const d = new Date(ts);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return '' + y + m + day;
+  }
+
+  async function extrairTituloPdf(file){
+    try{
+      const bytes = await fileToBytes(file);
+      const pdf = await pdfjsLib.getDocument({data: bytes}).promise;
+      const page = await pdf.getPage(1);
+      const lines = await PDFTextHeuristics.extractPageLines(page);
+      for (const line of lines){
+        const t = PDFTextHeuristics.lineToText(line);
+        if (t.trim()) return sanitizeFilename(t.trim());
+      }
+      return null;
+    } catch(e){
+      logMsg('Aviso: não foi possível extrair título de ' + file.name + ': ' + e.message, 'info');
+      return null;
+    }
+  }
+
+  async function gerarPreview(estrategia, prefixo){
+    const preview = [];
+    if (estrategia === 'sequencial'){
+      files.forEach((f, idx) => {
+        preview.push({original: f.name, novo: prefixo + '_' + pad3(idx+1) + '.pdf', file: f});
+      });
+    } else if (estrategia === 'por_data'){
+      for (const f of files){
+        const dataStr = formatDateYYYYMMDD(f.lastModified);
+        const stem = f.name.replace(/\.pdf$/i, '');
+        preview.push({original: f.name, novo: dataStr + '_' + stem + '.pdf', file: f});
+      }
+    } else if (estrategia === 'por_conteudo'){
+      for (const f of files){
+        const titulo = await extrairTituloPdf(f);
+        preview.push({original: f.name, novo: titulo ? titulo + '.pdf' : f.name, file: f});
+      }
+    } else if (estrategia === 'conteudo_sequencial'){
+      let idx = 0;
+      for (const f of files){
+        idx++;
+        const titulo = await extrairTituloPdf(f);
+        const novo = (titulo ? titulo : 'documento') + '_' + pad3(idx) + '.pdf';
+        preview.push({original: f.name, novo, file: f});
+      }
+    }
+    return preview;
+  }
+
+  function verificarConflitos(preview){
+    const nomes = preview.map(p => p.novo);
+    const conflitos = [];
+    const counts = {};
+    nomes.forEach(n => counts[n] = (counts[n]||0) + 1);
+    Object.keys(counts).forEach(n => { if (counts[n] > 1) conflitos.push(n); });
+    return conflitos;
+  }
+
+  async function runPreview(){
+    if (!files.length){
+      showResult('renamer', false, 'Selecione um ou mais PDFs');
+      return;
+    }
+    const estrategia = document.querySelector('input[name=rename-strategy]:checked').value;
+    const prefixo = document.getElementById('rename-prefix').value.trim() || 'documento';
+    setProgress('renamer', null, true);
+    logMsg('Gerando preview (' + estrategia + ') para ' + files.length + ' arquivo(s)', 'info');
+    try{
+      const preview = await gerarPreview(estrategia, prefixo);
+      const conflitos = verificarConflitos(preview);
+      lastPreview = {preview, conflitos};
+      renderPreview(lastPreview);
+      setProgress('renamer', null);
+      logMsg('Preview gerado com sucesso', 'ok');
+      document.getElementById('btn-renamer').disabled = false;
+      document.getElementById('btn-renamer-fsapi').disabled = false;
+      if (conflitos.length) logMsg('Conflitos detectados: ' + conflitos.join(', '), 'err');
+    } catch(e){
+      setProgress('renamer', null);
+      showResult('renamer', false, 'Erro ao gerar preview', e.message);
+    }
+  }
+
+  document.getElementById('btn-rename-preview').addEventListener('click', runPreview);
+  document.getElementById('btn-rename-clear').addEventListener('click', () => {
+    lastPreview = null;
+    document.getElementById('btn-renamer').disabled = true;
+    document.getElementById('btn-renamer-fsapi').disabled = true;
+    renderPreview(null);
+  });
+
+  /* Suporte opcional a File System Access API: grava cópias renomeadas direto numa pasta (Chrome/Edge) */
+  const fsapiSupported = 'showDirectoryPicker' in window;
+  const btnFsapi = document.getElementById('btn-renamer-fsapi');
+  if (fsapiSupported) btnFsapi.style.display = 'block';
+
+  btnFsapi.addEventListener('click', async () => {
+    if (!lastPreview) return;
+    try{
+      const dirHandle = await window.showDirectoryPicker();
+      setProgress('renamer', null, true);
+      let count = 0;
+      for (const item of lastPreview.preview){
+        const bytes = await fileToBytes(item.file);
+        const fileHandle = await dirHandle.getFileHandle(item.novo, {create: true});
+        const writable = await fileHandle.createWritable();
+        await writable.write(bytes);
+        await writable.close();
+        count++;
+        logMsg('Gravado: ' + item.novo, 'ok');
+      }
+      setProgress('renamer', null);
+      showResult('renamer', true, 'Cópias renomeadas gravadas na pasta escolhida', count + ' arquivo(s)');
+    } catch(e){
+      setProgress('renamer', null);
+      if (e.name !== 'AbortError'){
+        showResult('renamer', false, 'Erro ao gravar na pasta', e.message);
+      }
+    }
+  });
+
+  document.getElementById('btn-renamer').addEventListener('click', async () => {
+    if (!lastPreview){ await runPreview(); if (!lastPreview) return; }
+
+    setProgress('renamer', null, true);
+    try{
+      const zip = new JSZip();
+      let renomeados = 0;
+      for (const item of lastPreview.preview){
+        const bytes = await fileToBytes(item.file);
+        zip.file(item.novo, bytes);
+        if (item.original !== item.novo) renomeados++;
+      }
+      const zipBlob = await zip.generateAsync({type: 'blob'});
+
+      setProgress('renamer', null);
+      showResult('renamer', true, 'Renomeação pronta para download', renomeados + ' de ' + lastPreview.preview.length + ' arquivo(s) terão nome alterado',
+        () => { saveAs(zipBlob, 'pdfs_renomeados.zip'); }, '⬇ Baixar .zip com arquivos renomeados');
+    } catch(e){
+      setProgress('renamer', null);
+      showResult('renamer', false, 'Erro ao renomear', e.message);
+    }
+  });
+})();
+
+/* ======================================================================
+   PROTETOR DE PDF — UI
+   ====================================================================== */
+(function(){
+  let protectFile = null;
+  let unprotectFile = null;
+
+  setupDropzone('dz-protector', 'file-protector', (files) => {
+    protectFile = files[0];
+    setDropzoneFile('dz-protector', 'dz-protector-name', protectFile);
+    const stem = protectFile.name.replace(/\.pdf$/i, '');
+    document.getElementById('prot-output').value = stem + '_protegido.pdf';
+    updateProtectBtn();
+  });
+  setupDropzone('dz-unprotector', 'file-unprotector', (files) => {
+    unprotectFile = files[0];
+    setDropzoneFile('dz-unprotector', 'dz-unprotector-name', unprotectFile);
+    const stem = unprotectFile.name.replace(/\.pdf$/i, '');
+    document.getElementById('unprot-output').value = stem + '_desprotegido.pdf';
+    updateUnprotectBtn();
+  });
+
+  document.getElementById('prot-user-check').addEventListener('change', (e) => {
+    document.getElementById('prot-user-fields').style.display = e.target.checked ? 'block' : 'none';
+    updateProtectBtn();
+  });
+  document.getElementById('prot-owner-check').addEventListener('change', (e) => {
+    document.getElementById('prot-owner-fields').style.display = e.target.checked ? 'block' : 'none';
+    updateProtectBtn();
+  });
+  ['prot-user-pass','prot-user-conf','prot-owner-pass'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateProtectBtn);
+  });
+  document.getElementById('unprot-pass').addEventListener('input', updateUnprotectBtn);
+
+  function updateProtectBtn(){
+    const userOn = document.getElementById('prot-user-check').checked;
+    const ownerOn = document.getElementById('prot-owner-check').checked;
+    document.getElementById('btn-protector').disabled = !(protectFile && (userOn || ownerOn));
+  }
+  function updateUnprotectBtn(){
+    document.getElementById('btn-unprotector').disabled = !(unprotectFile && document.getElementById('unprot-pass').value);
+  }
+
+  document.getElementById('btn-protector').addEventListener('click', async () => {
+    const userOn = document.getElementById('prot-user-check').checked;
+    const ownerOn = document.getElementById('prot-owner-check').checked;
+    const userPass = document.getElementById('prot-user-pass').value;
+    const userConf = document.getElementById('prot-user-conf').value;
+    const ownerPass = document.getElementById('prot-owner-pass').value;
+
+    if (!userOn && !ownerOn){ showResult('protector', false, 'Selecione pelo menos um tipo de senha'); return; }
+    if (userOn){
+      if (!userPass){ showResult('protector', false, 'Digite a senha de usuário'); return; }
+      if (userPass !== userConf){ showResult('protector', false, 'Senhas de usuário não conferem'); return; }
+      if (userPass.length < 4){ showResult('protector', false, 'Senha de usuário deve ter no mínimo 4 caracteres'); return; }
+    }
+    if (ownerOn){
+      if (!ownerPass){ showResult('protector', false, 'Digite a senha de proprietário'); return; }
+      if (ownerPass.length < 4){ showResult('protector', false, 'Senha de proprietário deve ter no mínimo 4 caracteres'); return; }
+    }
+
+    let outName = document.getElementById('prot-output').value.trim() || 'protected.pdf';
+    if (!outName.toLowerCase().endsWith('.pdf')) outName += '.pdf';
+
+    setProgress('protector', null, true);
+    try{
+      logMsg('Processando: ' + protectFile.name, 'info');
+      const bytes = await fileToBytes(protectFile);
+      const opts = {
+        senhaUsuario: userOn ? userPass : '',
+        senhaProprietario: ownerOn ? ownerPass : '',
+        permitirImpressao: document.getElementById('prot-print').checked,
+        permitirCopia: document.getElementById('prot-copy').checked,
+        permitirEdicao: document.getElementById('prot-edit').checked,
+      };
+      logMsg('Aplicando proteção (RC4 128-bit, padrão PDF)...', 'info');
+      const outBytes = await PDFProtectorImpl.proteger(bytes, opts);
+
+      setProgress('protector', null);
+      showResult('protector', true, 'PDF protegido salvo: ' + outName, 'Lembre-se da senha — ela não pode ser recuperada',
+        () => downloadBytes(outBytes, outName, 'application/pdf'));
+    } catch(e){
+      setProgress('protector', null);
+      showResult('protector', false, 'Erro ao proteger PDF', e.message);
+    }
+  });
+
+  document.getElementById('btn-unprotector').addEventListener('click', async () => {
+    const senha = document.getElementById('unprot-pass').value;
+    let outName = document.getElementById('unprot-output').value.trim() || 'unprotected.pdf';
+    if (!outName.toLowerCase().endsWith('.pdf')) outName += '.pdf';
+
+    setProgress('protector', null, true);
+    try{
+      logMsg('Processando: ' + unprotectFile.name, 'info');
+      const bytes = await fileToBytes(unprotectFile);
+      logMsg('Removendo proteção...', 'info');
+      const outBytes = await PDFProtectorImpl.desproteger(bytes, senha);
+
+      setProgress('protector', null);
+      showResult('protector', true, 'PDF desprotegido salvo: ' + outName, null,
+        () => downloadBytes(outBytes, outName, 'application/pdf'));
+    } catch(e){
+      setProgress('protector', null);
+      showResult('protector', false, 'Erro ao desproteger PDF', e.message);
+    }
+  });
+})();
+</script>
+</body>
+</html>
