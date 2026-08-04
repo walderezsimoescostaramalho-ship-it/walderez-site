@@ -193,3 +193,23 @@ button.nav-toggle,
   color: #555;
   font-size: 0.9rem;
 }
+
+/* Ajuste de espaçamento entre parágrafos */
+.card p + p {
+  margin-top: 0.5rem;
+}
+
+/* Links dentro de listas */
+.section-list a {
+  font-weight: 500;
+  color: #2b6cb0;
+}
+
+.section-list a:hover {
+  text-decoration: underline;
+}
+
+/* Espaçamento entre blocos */
+.block {
+  margin-top: 2rem;
+}
