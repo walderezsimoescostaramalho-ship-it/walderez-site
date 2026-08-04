@@ -1,18 +1,18 @@
-/* ======== TEMA ACADÊMICO ======== */
+/* ======== TEMA MINIMALISTA UNIVERSITÁRIO ======== */
 
 body {
     margin: 0;
-    font-family: "Georgia", serif;
-    background: #f4f4f4;
-    color: #333;
+    font-family: "Inter", "Segoe UI", sans-serif;
+    background: #fafafa;
+    color: #222;
 }
 
 /* ======== CABEÇALHO ======== */
 
 header {
-    background: #2c3e50;
-    padding: 20px 30px;
-    color: white;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e5e5;
+    padding: 20px 40px;
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -20,7 +20,8 @@ header {
 
 header h1 {
     margin: 0;
-    font-size: 26px;
+    font-size: 24px;
+    font-weight: 600;
 }
 
 nav {
@@ -28,14 +29,15 @@ nav {
 }
 
 nav a {
-    color: #ecf0f1;
+    color: #444;
     margin-right: 20px;
     text-decoration: none;
-    font-size: 16px;
+    font-size: 15px;
+    font-weight: 500;
 }
 
 nav a:hover {
-    text-decoration: underline;
+    color: #000;
 }
 
 /* ======== CONTEÚDO ======== */
@@ -48,27 +50,49 @@ nav a:hover {
 
 .card {
     background: white;
-    padding: 25px;
+    padding: 30px;
     margin-top: 30px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    border: 1px solid #e5e5e5;
 }
 
-/* ======== LISTAS DE PROGRAMAS ======== */
+/* ======== LISTAS ======== */
 
-.program-list a {
-    display: block;
-    padding: 12px;
+.section-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.block {
+    margin-bottom: 40px;
+}
+
+.block ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.block li {
     margin: 8px 0;
-    background: #e0e0e0;
-    border-radius: 6px;
-    text-decoration: none;
-    color: #333;
-    font-size: 18px;
 }
 
-.program-list a:hover {
-    background: #cfcfcf;
+.block a {
+    text-decoration: none;
+    color: #0066cc;
+    font-size: 16px;
+}
+
+.block a:hover {
+    text-decoration: underline;
+}
+
+/* ======== ÍCONES ======== */
+
+.icon {
+    width: 20px;
+    vertical-align: middle;
+    margin-right: 8px;
 }
 
 /* ======== RODAPÉ ======== */
@@ -77,6 +101,5 @@ footer {
     text-align: center;
     padding: 20px;
     margin-top: 40px;
-    background: #2c3e50;
-    color: white;
+    color: #777;
 }
