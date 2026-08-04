@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formatador de Síntese</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #FBF8F2 0%, #F5F0E8 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 20px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #5B6B3F 0%, #6B7B4F 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #5B6B3F;
+            box-shadow: 0 0 0 3px rgba(91, 107, 63, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 300px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .btn-primary {
+            background: #5B6B3F;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4A5630;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(91, 107, 63, 0.3);
+        }
+
+        .btn-secondary {
+            background: #E8DCC4;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #DCC9AE;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+        }
+
+        .drag-drop-area {
+            border: 2px dashed #ddd;
+            border-radius: 6px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafafa;
+            margin-bottom: 12px;
+        }
+
+        .drag-drop-area:hover {
+            border-color: #5B6B3F;
+            background: #f5f5f5;
+        }
+
+        .drag-drop-area.dragover {
+            border-color: #5B6B3F;
+            background: #f0f4ed;
+            box-shadow: 0 0 0 3px rgba(91, 107, 63, 0.1);
+        }
+
+        .drag-drop-area p {
+            color: #666;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .drag-drop-area strong {
+            color: #5B6B3F;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #FFF3CD 0%, #FFE69C 100%);
+            border-left: 4px solid #FFA500;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+            border: 1px solid #FFB347;
+        }
+
+        .warning-box h4 {
+            color: #E67E22;
+            font-size: 14px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .warning-box p {
+            color: #8B5A00;
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 6px;
+            margin-bottom: 12px;
+        }
+
+        .preview {
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .preview.active {
+            display: block;
+        }
+
+        .preview h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .preview-content {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #555;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.2s;
+            flex: none;
+        }
+
+        .tab-btn.active {
+            color: #5B6B3F;
+            border-bottom-color: #5B6B3F;
+        }
+
+        .tab-btn:hover {
+            color: #5B6B3F;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .file-info {
+            display: none;
+            padding: 12px;
+            background: #e8f5e9;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #2e7d32;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            button {
+                flex: auto;
+                min-width: auto;
+            }
+
+            .form-group textarea {
+                min-height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 Formatador de Síntese</h1>
+            <p>Converta suas sínteses em PDF ou HTML formatado</p>
+        </div>
+
+        <div class="content">
+            <div id="message" class="message"></div>
+
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="input">Entrada</button>
+                <button class="tab-btn" data-tab="preview">Prévia</button>
+            </div>
+
+            <div id="input-tab" class="tab-content active">
+                <div class="form-group">
+                    <label for="disciplina">Disciplina</label>
+                    <input type="text" id="disciplina" placeholder="Ex: História da América II" value="">
+                </div>
+
+                <div class="form-group">
+                    <label for="markdown">Conteúdo da Síntese (Markdown)</label>
+                    <input type="file" id="fileInput" accept=".md,.txt" style="display: none;" />
+                    <div class="drag-drop-area" id="dragDropArea">
+                        <p>📁 <strong>Arraste um arquivo .md aqui</strong> ou <button type="button" id="browseBtn" class="btn-secondary" style="display: inline; padding: 6px 12px; font-size: 12px;">clique para selecionar</button></p>
+                    </div>
+                    <div class="hint">Formato: Referência ABNT na primeira linha, depois perguntas em **N. Pergunta**</div>
+                    <textarea id="markdown" placeholder="MELO, José. O tempo histórico e suas rupturas. São Paulo: Ática, 1998.
+
+**1. Sobre o que trata o texto?**
+O texto de Melo discute...
+
+**2. Quais são os principais argumentos do autor e como ele os formula?**
+O argumento central..."></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="formatarSintese()">✨ Formatar Síntese</button>
+                    <button class="btn-success" onclick="exportarHTML()">📄 Exportar HTML</button>
+                    <button class="btn-primary" onclick="exportarPDF()">📕 Exportar PDF</button>
+                </div>
+            </div>
+
+            <div id="preview-tab" class="tab-content">
+                <div class="file-info" id="fileInfo"></div>
+                <div id="preview" class="preview">
+                    <div id="previewContent" class="preview-content"></div>
+                </div>
+                <button class="btn-secondary" onclick="copiarParaClipboard()" style="margin-top: 16px; display: none;" id="copyBtn">📋 Copiar para Clipboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Div oculta para renderização de PDF -->
+    <div id="printContent" style="display: none;"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        // Elementos do DOM
+        const disciplinaInput = document.getElementById('disciplina');
+        const markdownInput = document.getElementById('markdown');
+        const fileInput = document.getElementById('fileInput');
+        const messageDiv = document.getElementById('message');
+        const previewDiv = document.getElementById('preview');
+        const previewContent = document.getElementById('previewContent');
+        const fileInfo = document.getElementById('fileInfo');
+        const copyBtn = document.getElementById('copyBtn');
+        const browseBtn = document.getElementById('browseBtn');
+        const dragDropArea = document.getElementById('dragDropArea');
+
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabName = this.dataset.tab;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(tabName + '-tab').classList.add('active');
+            });
+        });
+
+        // Função para carregar arquivo
+        function carregarArquivo(file) {
+            if (file && (file.name.endsWith('.md') || file.name.endsWith('.txt'))) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    markdownInput.value = event.target.result;
+                    showMessage(`✅ Arquivo "${file.name}" carregado com sucesso!`, 'success');
+                    fileInfo.textContent = `📁 Arquivo: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                    fileInfo.classList.add('show');
+                };
+                reader.readAsText(file);
+            } else {
+                showMessage('❌ Por favor, selecione um arquivo .md ou .txt', 'error');
+            }
+        }
+
+        // Botão de browse
+        browseBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            fileInput.click();
+        });
+
+        // Carregar arquivo via input
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                carregarArquivo(file);
+            }
+        });
+
+        // Drag and Drop
+        dragDropArea.addEventListener('click', function(e) {
+            if (e.target.id !== 'browseBtn') {
+                fileInput.click();
+            }
+        });
+
+        dragDropArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragDropArea.classList.add('dragover');
+        });
+
+        dragDropArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragDropArea.classList.remove('dragover');
+        });
+
+        dragDropArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dragDropArea.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                carregarArquivo(files[0]);
+            }
+        });
+
+        // Também permitir drag and drop na textarea
+        markdownInput.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            markdownInput.style.borderColor = '#5B6B3F';
+            markdownInput.style.backgroundColor = '#f5f4ed';
+        });
+
+        markdownInput.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            markdownInput.style.borderColor = '#ddd';
+            markdownInput.style.backgroundColor = 'white';
+        });
+
+        markdownInput.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            markdownInput.style.borderColor = '#ddd';
+            markdownInput.style.backgroundColor = 'white';
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                carregarArquivo(files[0]);
+            }
+        });
+
+        // Processar markdown em HTML
+        function parseMarkdown(text) {
+            let html = text;
+
+            // Referência (primeira linha)
+            const lines = html.split('\n');
+            const reference = lines[0];
+            html = html.substring(reference.length).trim();
+
+            // Negritos **texto**
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+            // Itálicos *texto*
+            html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+            // Quebras de linha
+            html = html.replace(/\n\n/g, '</p><p>');
+            html = '<p>' + html + '</p>';
+
+            // Remover <p></p> vazios
+            html = html.replace(/<p><\/p>/g, '');
+
+            return {
+                reference: reference,
+                content: html
+            };
+        }
+
+        // Mostrar mensagem
+        function showMessage(msg, type = 'info') {
+            messageDiv.textContent = msg;
+            messageDiv.className = 'message show ' + type;
+            setTimeout(() => {
+                messageDiv.classList.remove('show');
+            }, 5000);
+        }
+
+        // Formatar síntese
+        function formatarSintese() {
+            const disciplina = disciplinaInput.value.trim();
+            const markdown = markdownInput.value.trim();
+
+            if (!markdown) {
+                showMessage('⚠️ Por favor, insira o conteúdo da síntese', 'error');
+                return;
+            }
+
+            const parsed = parseMarkdown(markdown);
+
+            let htmlContent = `<div style="font-family: Georgia, serif; max-width: 800px;">`;
+
+            if (disciplina) {
+                htmlContent += `<h2 style="color: #5B6B3F; margin-bottom: 8px;">${escaparHTML(disciplina)}</h2>`;
+            }
+
+            // Bloco de aviso
+            htmlContent += `<div style="background: linear-gradient(135deg, #FFF3CD 0%, #FFE69C 100%); border-left: 4px solid #FFA500; border-radius: 6px; padding: 16px; margin-bottom: 24px; border: 1px solid #FFB347;">
+                <h4 style="color: #E67E22; font-size: 14px; font-weight: 700; margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">⚠️ Atenção</h4>
+                <p style="color: #8B5A00; font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500;">Esta síntese foi gerada por inteligência artificial e contém intencionalmente erros fáticos e interpretativos. É um material didático para atividade de leitura crítica em sala de aula. Não use como referência para compreensão correta do texto original.</p>
+            </div>`;
+
+            htmlContent += `<div style="color: #666; font-size: 13px; margin-bottom: 24px; border-left: 3px solid #ddd; padding-left: 12px;"><strong>Referência:</strong> ${escaparHTML(parsed.reference)}</div>`;
+            htmlContent += `<div style="line-height: 1.8; color: #333;">${parsed.content}</div>`;
+            htmlContent += `</div>`;
+
+            previewContent.innerHTML = htmlContent;
+            previewDiv.classList.add('active');
+            copyBtn.style.display = 'block';
+
+            // Trocar para aba de prévia
+            document.querySelector('[data-tab="preview"]').click();
+            showMessage('✅ Síntese formatada com sucesso!', 'success');
+        }
+
+        // Exportar HTML
+        function exportarHTML() {
+            const disciplina = disciplinaInput.value.trim();
+            const markdown = markdownInput.value.trim();
+
+            if (!markdown) {
+                showMessage('⚠️ Por favor, insira o conteúdo da síntese', 'error');
+                return;
+            }
+
+            const parsed = parseMarkdown(markdown);
+
+            const htmlContent = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escaparHTML(disciplina || 'Síntese')}</title>
+    <style>
+        body {
+            font-family: Georgia, serif;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            color: #333;
+            background: #fafafa;
+        }
+        h2 {
+            color: #5B6B3F;
+            margin-bottom: 8px;
+            margin-top: 0;
+        }
+        .warning {
+            background: linear-gradient(135deg, #FFF3CD 0%, #FFE69C 100%);
+            border-left: 4px solid #FFA500;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 24px;
+            border: 1px solid #FFB347;
+        }
+        .warning h4 {
+            color: #E67E22;
+            font-size: 14px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+        .warning p {
+            color: #8B5A00;
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0;
+            font-weight: 500;
+        }
+        .reference {
+            color: #666;
+            font-size: 14px;
+            border-left: 3px solid #5B6B3F;
+            padding-left: 12px;
+            margin-bottom: 24px;
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 4px;
+        }
+        strong {
+            color: #5B6B3F;
+            font-weight: 600;
+        }
+        em {
+            font-style: italic;
+            color: #666;
+        }
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #999;
+            font-size: 12px;
+        }
+        @media print {
+            body { background: white; }
+            .warning { break-inside: avoid; }
+            .reference { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    ${disciplina ? `<h2>${escaparHTML(disciplina)}</h2>` : ''}
+    <div class="warning">
+        <h4>⚠️ Atenção</h4>
+        <p>Esta síntese foi gerada por inteligência artificial e contém intencionalmente erros fáticos e interpretativos. É um material didático para atividade de leitura crítica em sala de aula. Não use como referência para compreensão correta do texto original.</p>
+    </div>
+    <div class="reference">
+        <strong>Referência:</strong> ${escaparHTML(parsed.reference)}
+    </div>
+    <div class="content">
+        ${parsed.content}
+    </div>
+    <footer>
+        <p>Gerado por Formatador de Síntese • ${new Date().toLocaleDateString('pt-BR')}</p>
+    </footer>
+</body>
+</html>`;
+
+            // Salvar arquivo
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const link = document.createElement('a');
+            const timestamp = new Date().toISOString().slice(0, 10);
+            const filename = `sintese_${timestamp}${disciplina ? '_' + disciplina.replace(/\s+/g, '_').toLowerCase() : ''}.html`.replace(/[^\w\-_.]/g, '');
+
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showMessage(`✅ HTML exportado como "${filename}"`, 'success');
+        }
+
+        // Exportar PDF
+        function exportarPDF() {
+            const disciplina = disciplinaInput.value.trim();
+            const markdown = markdownInput.value.trim();
+
+            if (!markdown) {
+                showMessage('⚠️ Por favor, insira o conteúdo da síntese', 'error');
+                return;
+            }
+
+            const parsed = parseMarkdown(markdown);
+
+            const element = document.createElement('div');
+            element.innerHTML = `
+                <div style="font-family: Georgia, serif; padding: 20px;">
+                    ${disciplina ? `<h2 style="color: #5B6B3F; margin-bottom: 8px;">${escaparHTML(disciplina)}</h2>` : ''}
+                    <div style="background: linear-gradient(135deg, #FFF3CD 0%, #FFE69C 100%); border-left: 4px solid #FFA500; border-radius: 6px; padding: 16px; margin-bottom: 24px; border: 1px solid #FFB347;">
+                        <h4 style="color: #E67E22; font-size: 14px; font-weight: 700; margin: 0 0 8px 0;">⚠️ Atenção</h4>
+                        <p style="color: #8B5A00; font-size: 13px; line-height: 1.6; margin: 0; font-weight: 500;">Esta síntese foi gerada por inteligência artificial e contém intencionalmente erros fáticos e interpretativos. É um material didático para atividade de leitura crítica em sala de aula. Não use como referência para compreensão correta do texto original.</p>
+                    </div>
+                    <div style="color: #666; font-size: 13px; margin-bottom: 24px; border-left: 3px solid #ddd; padding-left: 12px;">
+                        <strong>Referência:</strong> ${escaparHTML(parsed.reference)}
+                    </div>
+                    <div style="line-height: 1.8; color: #333; text-align: justify;">
+                        ${parsed.content}
+                    </div>
+                </div>
+            `;
+
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: `sintese_${new Date().toISOString().slice(0, 10)}${disciplina ? '_' + disciplina.replace(/\s+/g, '_').toLowerCase() : ''}.pdf`.replace(/[^\w\-_.]/g, ''),
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            showMessage('⏳ Gerando PDF...', 'info');
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                showMessage('✅ PDF exportado com sucesso!', 'success');
+            }).catch(err => {
+                console.error(err);
+                showMessage('❌ Erro ao exportar PDF', 'error');
+            });
+        }
+
+        // Copiar para clipboard
+        function copiarParaClipboard() {
+            const content = previewContent.innerText;
+            navigator.clipboard.writeText(content).then(() => {
+                showMessage('✅ Copiado para clipboard!', 'success');
+            }).catch(() => {
+                showMessage('❌ Erro ao copiar', 'error');
+            });
+        }
+
+        // Escapar caracteres HTML
+        function escaparHTML(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Inicializar
+        console.log('Formatador de Síntese iniciado');
+    </script>
+</body>
+</html>
