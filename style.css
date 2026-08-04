@@ -1,21 +1,23 @@
-/* ======== TEMA MINIMALISTA UNIVERSITÁRIO ======== */
+/* ======== TEMA TERROSO MINIMALISTA ======== */
 
 body {
     margin: 0;
-    font-family: "Inter", "Segoe UI", sans-serif;
-    background: #fafafa;
-    color: #222;
+    font-family: "Inter", sans-serif;
+    background: #f9f6f1; /* papel terroso */
+    color: #2e2e2e;
 }
 
-/* ======== CABEÇALHO ======== */
+/* ======== CABEÇALHO FIXO ======== */
 
 header {
-    background: #ffffff;
-    border-bottom: 1px solid #e5e5e5;
+    background: #5a4632; /* marrom escuro elegante */
+    color: #f9f6f1;
     padding: 20px 40px;
-    position: sticky;
+    position: fixed;
     top: 0;
+    width: 100%;
     z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
 }
 
 header h1 {
@@ -29,7 +31,7 @@ nav {
 }
 
 nav a {
-    color: #444;
+    color: #f9f6f1;
     margin-right: 20px;
     text-decoration: none;
     font-size: 15px;
@@ -37,7 +39,7 @@ nav a {
 }
 
 nav a:hover {
-    color: #000;
+    color: #a67c52; /* marrom claro */
 }
 
 /* ======== CONTEÚDO ======== */
@@ -45,23 +47,24 @@ nav a:hover {
 .container {
     max-width: 900px;
     margin: auto;
-    padding: 40px;
+    padding: 120px 40px 40px; /* espaço por causa do menu fixo */
 }
 
 .card {
-    background: white;
+    background: #ffffff;
     padding: 30px;
     margin-top: 30px;
     border-radius: 12px;
     border: 1px solid #e5e5e5;
 }
 
-/* ======== LISTAS ======== */
+/* ======== SEÇÕES ======== */
 
 .section-title {
     font-size: 20px;
     font-weight: 600;
     margin-bottom: 15px;
+    color: #5a4632;
 }
 
 .block {
@@ -79,7 +82,7 @@ nav a:hover {
 
 .block a {
     text-decoration: none;
-    color: #0066cc;
+    color: #a67c52;
     font-size: 16px;
 }
 
@@ -90,9 +93,9 @@ nav a:hover {
 /* ======== ÍCONES ======== */
 
 .icon {
-    width: 20px;
+    width: 22px;
     vertical-align: middle;
-    margin-right: 8px;
+    margin-right: 10px;
 }
 
 /* ======== RODAPÉ ======== */
