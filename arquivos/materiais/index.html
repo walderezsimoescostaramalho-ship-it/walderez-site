@@ -62,8 +62,30 @@
 
             if (item.type === 'dir') {
                 const a = document.createElement('a');
-                a.href = item.name + '/';
+                a.href = `/${repo}/${path}/${item.name}/`;
                 a.textContent = item.name + '/';
                 li.appendChild(a);
             } else {
-                const a = document.createElement('a
+                const a = document.createElement('a');
+                a.href = `/${repo}/${path}/${item.name}`;
+                a.textContent = item.name;
+
+                const meta = document.createElement('span');
+                meta.className = 'material-meta';
+                const kb = (item.size / 1024).toFixed(1);
+                meta.textContent = ` (${kb} KB)`;
+
+                li.appendChild(a);
+                li.appendChild(meta);
+            }
+
+            ul.appendChild(li);
+        }
+    } catch (e) {
+        ul.innerHTML = '<li>Erro ao carregar materiais.</li>';
+    }
+})();
+</script>
+
+</body>
+</html>
